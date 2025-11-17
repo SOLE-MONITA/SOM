@@ -30,7 +30,7 @@ end
 
 loop
     wclusterd -> mclusterd: sync
-    rnote over wclusterd, mclusterd: [[https://github.com/som/som/blob/master/framework/som/core/cluster/cluster.json sync file list]]
+    rnote over wclusterd, mclusterd: [[https://github.com/IndomitableDarby/SOM/blob/main/framework/som/core/cluster/cluster.json sync file list]]
     mclusterd --> wclusterd: delta
 end
 
