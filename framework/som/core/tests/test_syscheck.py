@@ -1,5 +1,5 @@
-# Copyright (C) 2015, Wazuh Inc.
-# Created by Wazuh, Inc. <info@wazuh.com>.
+# Copyright (C) 2015, Som Inc.
+# Created by Som, Inc. <info@som.com>.
 # This program is a free software; you can redistribute it and/or modify it under the terms of GPLv2
 
 from datetime import datetime
@@ -8,24 +8,24 @@ from unittest.mock import patch, ANY
 
 import pytest
 
-with patch('wazuh.core.common.wazuh_uid'):
-    with patch('wazuh.core.common.wazuh_gid'):
-        from wazuh.core import syscheck
-        from wazuh.core.utils import get_date_from_timestamp
+with patch('som.core.common.som_uid'):
+    with patch('som.core.common.som_gid'):
+        from som.core import syscheck
+        from som.core.utils import get_date_from_timestamp
 
 
 @pytest.mark.parametrize('agent', ['002', '080'])
-@patch("wazuh.core.syscheck.WazuhDBBackend")
-@patch("wazuh.core.syscheck.WazuhDBQuery.__init__")
-def test_wazuh_db_query_syscheck__init__(mock_wdbquery, mock_backend, agent):
-    """Test if WazuhDBQuery and WazuhDBBackend are called with the expected parameters.
+@patch("som.core.syscheck.SomDBBackend")
+@patch("som.core.syscheck.SomDBQuery.__init__")
+def test_som_db_query_syscheck__init__(mock_wdbquery, mock_backend, agent):
+    """Test if SomDBQuery and SomDBBackend are called with the expected parameters.
 
     Parameters
     ----------
     agent: str
         The agent to test.
     """
-    syscheck.WazuhDBQuerySyscheck(agent)
+    syscheck.SomDBQuerySyscheck(agent)
     mock_backend.assert_called_with(agent)
     mock_wdbquery.assert_called_with(backend=ANY, default_sort_field='mtime', min_select_fields=set(), count=True,
                                      get_data=True, date_fields={'start', 'end', 'mtime', 'date'})
@@ -40,10 +40,10 @@ def test_wazuh_db_query_syscheck__init__(mock_wdbquery, mock_backend, agent):
              '"read_data", "write_data", "append_data", "read_ea", "write_ea", "execute"]}}'},
      True)
 ])
-@patch("wazuh.core.syscheck.WazuhDBBackend")
-def test_wazuh_db_syscheck_format_data_into_dictionary(mock_backend, data, is_json):
+@patch("som.core.syscheck.SomDBBackend")
+def test_som_db_syscheck_format_data_into_dictionary(mock_backend, data, is_json):
     """Test if _format_data_into_dictionary() returns the expected element."""
-    test = syscheck.WazuhDBQuerySyscheck('002', offset=0, limit=1000, sort=None, search='test',
+    test = syscheck.SomDBQuerySyscheck('002', offset=0, limit=1000, sort=None, search='test',
                                          select=['end', 'start', 'module', 'date', 'mtime', 'perm'],
                                          filters={}, table='pm_event', query='',
                                          fields={'end': 'end_scan', 'start': 'start_scan', 'module': 'module',
@@ -66,7 +66,7 @@ def test_wazuh_db_syscheck_format_data_into_dictionary(mock_backend, data, is_js
 
 
 @pytest.mark.parametrize('agent', ['001', '002', '003'])
-@patch('wazuh.core.wdb.WazuhDBConnection')
+@patch('som.core.wdb.SomDBConnection')
 def test_syscheck_delete_agent(mock_db_conn, agent):
     """Test if proper parameters are being sent to the wdb socket.
 
@@ -74,8 +74,8 @@ def test_syscheck_delete_agent(mock_db_conn, agent):
     ----------
     agent : str
         Agent whose information is being deleted from the db.
-    mock_db_conn : WazuhDBConnection
-        Object used to send the delete message to the wazuhdb socket.
+    mock_db_conn : SomDBConnection
+        Object used to send the delete message to the somdb socket.
     """
     syscheck.syscheck_delete_agent(agent, mock_db_conn)
     mock_db_conn.execute.assert_any_call(f"agent {agent} sql delete from fim_entry", delete=True)

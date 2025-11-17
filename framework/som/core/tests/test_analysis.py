@@ -3,15 +3,15 @@ import os.path
 import pytest
 from unittest.mock import MagicMock, patch
 
-from wazuh.core.analysis import (
+from som.core.analysis import (
     is_ruleset_file,
     log_ruleset_reload_response,
     RulesetReloadResponse,
     send_reload_ruleset_and_get_results
 )
-from wazuh.core.common import WAZUH_PATH
-from wazuh.core.results import AffectedItemsWazuhResult
-from wazuh.core.exception import WazuhError
+from som.core.common import WAZUH_PATH
+from som.core.results import AffectedItemsSomResult
+from som.core.exception import SomError
 
 @pytest.mark.parametrize(
     "filename,expected",
@@ -75,8 +75,8 @@ def test_log_ruleset_reload_response(response_dict, expected_log_method, expecte
 def test_send_reload_ruleset_and_get_results(socket_response_dict, expected_affected, expected_failed, expected_msg):
     """Test send_reload_ruleset_and_get_results updates results as expected."""
     node_id = "test-node"
-    results = AffectedItemsWazuhResult(all_msg="test")
-    with patch("wazuh.core.analysis.send_reload_ruleset_msg") as mock_send:
+    results = AffectedItemsSomResult(all_msg="test")
+    with patch("som.core.analysis.send_reload_ruleset_msg") as mock_send:
         mock_send.return_value = RulesetReloadResponse(socket_response_dict)
         updated_results = send_reload_ruleset_and_get_results(node_id, results)
         assert len(updated_results.affected_items) == expected_affected
@@ -87,7 +87,7 @@ def test_send_reload_ruleset_and_get_results(socket_response_dict, expected_affe
         if expected_failed:
             found = False
             for error_obj, node_ids in updated_results.failed_items.items():
-                if isinstance(error_obj, WazuhError) and node_id in node_ids:
+                if isinstance(error_obj, SomError) and node_id in node_ids:
                     assert expected_msg in error_obj._extra_message
                     found = True
             assert found, f"{node_id} not found in failed_items"

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
-# Copyright (C) 2015, Wazuh Inc.
-# Created by Wazuh, Inc. <info@wazuh.com>.
+# Copyright (C) 2015, Som Inc.
+# Created by Som, Inc. <info@som.com>.
 # This program is free software; you can redistribute it and/or modify it under the terms of GPLv2
 
 import os
@@ -9,10 +9,10 @@ from unittest.mock import patch
 
 import pytest
 
-with patch('wazuh.core.common.wazuh_uid'):
-    with patch('wazuh.core.common.wazuh_gid'):
-        from wazuh.core.exception import WazuhError, WazuhInternalError, WazuhException
-        from wazuh.core import decoder
+with patch('som.core.common.som_uid'):
+    with patch('som.core.common.som_gid'):
+        from som.core.exception import SomError, SomInternalError, SomException
+        from som.core import decoder
 
 
 # Variables
@@ -22,7 +22,7 @@ test_data_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'data
 # Tests
 
 @pytest.mark.parametrize("detail, value, details, expected_result", [
-    ("parent", "wazuh", {'regex': ['regex00']}, {'parent': 'wazuh', 'regex': ['regex00']}),
+    ("parent", "som", {'regex': ['regex00']}, {'parent': 'som', 'regex': ['regex00']}),
     ("prematch", "^Agent buffer:", {}, {'prematch': "^Agent buffer:"}),
     ("regex", "regex01", {}, {'regex': ['regex01']}),
     ("regex", "regex02", {'regex': ['regex03']}, {'regex': ['regex03', 'regex02']}),
@@ -39,14 +39,14 @@ def test_add_detail(detail, value, details, expected_result):
     ("all", "all"),
     ("enabled", "enabled"),
     ("disabled", "disabled"),
-    ("wrong", WazuhError(1202))
+    ("wrong", SomError(1202))
 ])
 def test_check_status(status, expected_result):
     try:
         # UUT call
         result = decoder.check_status(status)
         assert result == expected_result
-    except WazuhError as e:
+    except SomError as e:
         # If the UUT call returns an exception we check it has the appropriate error code
         assert e.code == expected_result.code
 
@@ -54,11 +54,11 @@ def test_check_status(status, expected_result):
 @pytest.mark.parametrize("filename, relative_dirname, status, permissions, exception", [
     ('test1_decoders.xml', 'decoders', "all", 777, None),
     ('test2_decoders.xml', 'decoders', "enabled", 777, None),
-    ('wrong_decoders.xml', 'decoders', "all", 777, WazuhInternalError(1501)),
-    ('non_existing.xml', 'decoders', "disabled", 777, WazuhError(1502)),
-    ('test1_decoders.xml', 'decoders', "all", 000, WazuhError(1502)),
+    ('wrong_decoders.xml', 'decoders', "all", 777, SomInternalError(1501)),
+    ('non_existing.xml', 'decoders', "disabled", 777, SomError(1502)),
+    ('test1_decoders.xml', 'decoders', "all", 000, SomError(1502)),
 ])
-@patch('wazuh.core.common.WAZUH_PATH', new=test_data_path)
+@patch('som.core.common.WAZUH_PATH', new=test_data_path)
 def test_load_decoders_from_file(filename, relative_dirname, status, permissions, exception):
     full_file_path = os.path.join(test_data_path, relative_dirname, filename)
     try:
@@ -76,7 +76,7 @@ def test_load_decoders_from_file(filename, relative_dirname, status, permissions
         for item in result:
             assert (item['filename'], item['relative_dirname'], item['status']) == (filename, relative_dirname, status)
             assert {'name', 'position', 'details'}.issubset(set(item))
-    except WazuhException as e:
+    except SomException as e:
         # If the UUT call returns an exception we check it has the appropriate error code
         assert e.code == exception.code
     finally:
@@ -84,7 +84,7 @@ def test_load_decoders_from_file(filename, relative_dirname, status, permissions
         os.path.exists(full_file_path) and os.chmod(full_file_path, old_permissions)
 
 
-@patch('wazuh.core.common.WAZUH_PATH', new=test_data_path)
+@patch('som.core.common.WAZUH_PATH', new=test_data_path)
 def test_load_decoders_from_file_details():
     decoder_file = 'test3_decoders.xml'
     decoder_path = 'decoders'

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
-# Copyright (C) 2015, Wazuh Inc.
-# Created by Wazuh, Inc. <info@wazuh.com>.
+# Copyright (C) 2015, Som Inc.
+# Created by Som, Inc. <info@som.com>.
 # This program is free software; you can redistribute it and/or modify it under the terms of GPLv2
 
 import json
@@ -9,11 +9,11 @@ from unittest.mock import patch, MagicMock
 
 import pytest
 
-with patch('wazuh.core.common.wazuh_uid'):
-    with patch('wazuh.core.common.wazuh_gid'):
-        from wazuh.core.exception import WazuhError
-        from wazuh.core import active_response
-        from wazuh.core.agent import Agent
+with patch('som.core.common.som_uid'):
+    with patch('som.core.common.som_gid'):
+        from som.core.exception import SomError
+        from som.core import active_response
+        from som.core.agent import Agent
 
 # Variables
 test_data_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'data', 'etc', 'shared', 'ar.conf')
@@ -32,9 +32,9 @@ def agent_config(expected_exception):
 # Tests
 
 @pytest.mark.parametrize('agent_version, builder_type', [
-    ('Wazuh v4.2.0', active_response.ARJsonMessage),
-    ('Wazuh v4.3.0', active_response.ARJsonMessage),
-    ('Wazuh v4.1.0', active_response.ARStrMessage)
+    ('Som v4.2.0', active_response.ARJsonMessage),
+    ('Som v4.3.0', active_response.ARJsonMessage),
+    ('Som v4.1.0', active_response.ARStrMessage)
 ])
 def test_correct_builder_is_used(agent_version, builder_type):
     """Test if the correct builder is used based on the agent version.
@@ -54,11 +54,11 @@ def test_correct_builder_is_used(agent_version, builder_type):
     (1650, None, []),
     (1652, 'random', []),
     (1652, 'invalid_cmd', []),
-    (None, 'restart-wazuh0', []),
-    (None, '!restart-wazuh0', []),
-    (None, 'restart-wazuh0', ["arg1", "arg2"])
+    (None, 'restart-som0', []),
+    (None, '!restart-som0', []),
+    (None, 'restart-som0', ["arg1", "arg2"])
 ])
-@patch('wazuh.core.common.AR_CONF', new=test_data_path)
+@patch('som.core.common.AR_CONF', new=test_data_path)
 def test_create_message(expected_exception, command, arguments):
     """Check if the returned message is correct.
 
@@ -77,7 +77,7 @@ def test_create_message(expected_exception, command, arguments):
         True if command is a script.
     """
     if expected_exception:
-        with pytest.raises(WazuhError, match=f'.* {expected_exception} .*'):
+        with pytest.raises(SomError, match=f'.* {expected_exception} .*'):
             active_response.ARStrMessage().create_message(command=command, arguments=arguments)
     else:
         ret = active_response.ARStrMessage().create_message(command=command, arguments=arguments)
@@ -88,12 +88,12 @@ def test_create_message(expected_exception, command, arguments):
 
 @pytest.mark.parametrize('expected_exception, command, arguments, alert', [
     (1650, None, [], None),
-    (None, 'restart-wazuh0', [], None),
-    (None, 'restart-wazuh0', [], None),
-    (None, 'restart-wazuh0', ["arg1", "arg2"], None),
+    (None, 'restart-som0', [], None),
+    (None, 'restart-som0', [], None),
+    (None, 'restart-som0', ["arg1", "arg2"], None),
     (1652, 'custom-ar', ["arg1", "arg2"], {"data": {"srcip": "1.1.1.1"}})
 ])
-@patch('wazuh.core.common.AR_CONF', new=test_data_path)
+@patch('som.core.common.AR_CONF', new=test_data_path)
 def test_create_json_message(expected_exception, command, arguments, alert):
     """Check if the returned json message is correct.
 
@@ -112,7 +112,7 @@ def test_create_json_message(expected_exception, command, arguments, alert):
         Alert data for the AR message.
     """
     if expected_exception:
-        with pytest.raises(WazuhError, match=f'.* {expected_exception} .*'):
+        with pytest.raises(SomError, match=f'.* {expected_exception} .*'):
             active_response.ARJsonMessage().create_message(command=command, arguments=arguments, alert=alert)
     else:
         ret = json.loads(
@@ -125,7 +125,7 @@ def test_create_json_message(expected_exception, command, arguments, alert):
             assert alert == ret["parameters"]["alert"], f'Alert information not being added'
 
 
-@patch('wazuh.core.common.AR_CONF', new=test_data_path)
+@patch('som.core.common.AR_CONF', new=test_data_path)
 def test_get_commands():
     """
     Checks if get_commands method returns a list
@@ -153,7 +153,7 @@ def test_shell_escape(command, expected_escape):
 
 
 @pytest.mark.parametrize('agent_id, agent_version, command, arguments, alert', [
-    ('agent001', 'Wazuh v4.14.0', 'ls', ['arg1', 'arg2'], 
+    ('agent001', 'Som v4.14.0', 'ls', ['arg1', 'arg2'], 
     {'type': 'Firewall', 'src_ip': '192.168.1.1'})
 ])
 def test_send_ar_message(agent_id, agent_version, command, arguments, alert):
@@ -178,11 +178,11 @@ def test_send_ar_message(agent_id, agent_version, command, arguments, alert):
                                                                              alert=alert)
         mock_wq.send_msg_to_agent.assert_called_once_with(msg=mock_message_builder_instance.create_message.return_value,
                                                           agent_id=agent_id,
-                                                          msg_type=active_response.WazuhQueue.AR_TYPE)
+                                                          msg_type=active_response.SomQueue.AR_TYPE)
 
 
 @pytest.mark.parametrize('mock_agent_info, mock_agent_conf, expected_error_code',[
-    ({'status': 'active', 'version': 'Wazuh v4.14.0'}, {'active-response': {'disabled': 'yes'}}, 1750),
+    ({'status': 'active', 'version': 'Som v4.14.0'}, {'active-response': {'disabled': 'yes'}}, 1750),
 ])
 def test_send_ar_message_nok(mock_agent_info, mock_agent_conf, expected_error_code):
     """Checks if the function raises the expected exceptions."""

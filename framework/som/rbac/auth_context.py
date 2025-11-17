@@ -1,5 +1,5 @@
-# Copyright (C) 2015, Wazuh Inc.
-# Created by Wazuh, Inc. <info@wazuh.com>.
+# Copyright (C) 2015, Som Inc.
+# Created by Som, Inc. <info@som.com>.
 # This program is a free software; you can redistribute it and/or modify it under the terms of GPLv2
 
 import json
@@ -7,7 +7,7 @@ import re
 from collections import defaultdict
 from typing import Union
 
-from wazuh.rbac import orm
+from som.rbac import orm
 
 
 class RBAChecker:
@@ -189,7 +189,7 @@ class RBAChecker:
         Returns
         -------
         bool or None
-            True/False/None, it is possible that the database has been modified externally to Wazuh, Potential Security
+            True/False/None, it is possible that the database has been modified externally to Som, Potential Security
             Breach, Currently, if this is the case and the unknown role is invalid, it will not cause any problems to
             the system, it will be ignored.
         """
@@ -371,7 +371,7 @@ class RBAChecker:
         list_roles = list()
         for role in self.roles_list:
             for rule in role['rules']:
-                # wazuh-wui has id 2
+                # som-wui has id 2
                 if (rule['id'] > orm.MAX_ID_RESERVED or self.user_id == 2) and self.check_rule(rule['rule']):
                     list_roles.append(role['id'])
                     break

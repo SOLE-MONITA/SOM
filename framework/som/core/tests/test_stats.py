@@ -1,5 +1,5 @@
-# Copyright (C) 2015, Wazuh Inc.
-# Created by Wazuh, Inc. <info@wazuh.com>.
+# Copyright (C) 2015, Som Inc.
+# Created by Som, Inc. <info@som.com>.
 # This program is free software; you can redistribute it and/or modify it under the terms of GPLv2
 
 import os
@@ -10,16 +10,16 @@ from unittest.mock import MagicMock, mock_open, patch, call
 
 import pytest
 
-with patch('wazuh.core.common.wazuh_uid'):
-    with patch('wazuh.core.common.wazuh_gid'):
-        sys.modules['wazuh.rbac.orm'] = MagicMock()
-        import wazuh.rbac.decorators
-        from wazuh.core import common, stats
-        from wazuh.core.exception import WazuhError, WazuhException, WazuhInternalError
-        from wazuh.tests.util import RBAC_bypasser
+with patch('som.core.common.som_uid'):
+    with patch('som.core.common.som_gid'):
+        sys.modules['som.rbac.orm'] = MagicMock()
+        import som.rbac.decorators
+        from som.core import common, stats
+        from som.core.exception import SomError, SomException, SomInternalError
+        from som.tests.util import RBAC_bypasser
 
-        del sys.modules['wazuh.rbac.orm']
-        wazuh.rbac.decorators.expose_resources = RBAC_bypasser
+        del sys.modules['som.rbac.orm']
+        som.rbac.decorators.expose_resources = RBAC_bypasser
 
 test_data_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'data', 'stats')
 
@@ -49,16 +49,16 @@ def test_totals_(date_):
 
 def test_totals_ko_():
     """Verify totals_() function exception with data problems works"""
-    with patch('wazuh.core.stats.open', side_effect=IOError):
-        with pytest.raises(WazuhException, match=".* 1308 .*"):
+    with patch('som.core.stats.open', side_effect=IOError):
+        with pytest.raises(SomException, match=".* 1308 .*"):
             stats.totals_(date(1996, 8, 13))
 
     with patch("builtins.open", mock_open(read_data='15-571-3-2\n15--107--1483')):
-        with pytest.raises(WazuhInternalError, match=".* 1309 .*"):
+        with pytest.raises(SomInternalError, match=".* 1309 .*"):
             stats.totals_(date(1996, 8, 13))
 
 
-@patch('wazuh.core.common.STATS_PATH', new=test_data_path)
+@patch('som.core.common.STATS_PATH', new=test_data_path)
 def test_weekly_():
     """Verify weekly_() function works as expected"""
     result = stats.weekly_()
@@ -67,7 +67,7 @@ def test_weekly_():
         assert day in [d for r in result for d in r.keys()], 'Data do not match'
 
 
-@patch('wazuh.core.common.STATS_PATH', new='')
+@patch('som.core.common.STATS_PATH', new='')
 def test_weekly_data():
     """Verify weekly_() function works as expected"""
     result = stats.weekly_()
@@ -78,7 +78,7 @@ def test_weekly_data():
         assert 0 == result[days.index(day)][day]['interactions']
 
 
-@patch('wazuh.core.common.STATS_PATH', new=test_data_path)
+@patch('som.core.common.STATS_PATH', new=test_data_path)
 def test_hourly_():
     """Verify hourly_() function works as expected"""
     result = stats.hourly_()
@@ -87,7 +87,7 @@ def test_hourly_():
         assert hour in result[0]['averages'], 'Data do not match'
 
 
-@patch('wazuh.core.common.STATS_PATH', new='')
+@patch('som.core.common.STATS_PATH', new='')
 def test_hourly_data():
     """Test hourly_() function exceptions works"""
     result = stats.hourly_()
@@ -164,9 +164,9 @@ def test_check_if_daemon_exists_in_agent(agent, daemon, expected_value):
                'agents': [{'id': agent_id, 'uptime': datetime(2022, 7, 21, 10, 54, 10, tzinfo=timezone.utc)} for
                           agent_id in [1, 2, 3]]}})
 ])
-@patch('wazuh.core.wazuh_socket.WazuhSocketJSON.close')
-@patch('wazuh.core.wazuh_socket.WazuhSocketJSON.send')
-@patch('wazuh.core.wazuh_socket.WazuhSocketJSON.__init__', return_value=None)
+@patch('som.core.som_socket.SomSocketJSON.close')
+@patch('som.core.som_socket.SomSocketJSON.send')
+@patch('som.core.som_socket.SomSocketJSON.__init__', return_value=None)
 def test_get_daemons_stats_socket(mock__init__, mock_send, mock_close, agents_list, expected_socket_response,
                                   expected_result):
     """Verify get_daemons_stats_socket(socket : str) function works as expected"""
@@ -178,7 +178,7 @@ def test_get_daemons_stats_socket(mock__init__, mock_send, mock_close, agents_li
         if agents_list == 'all':
             expected_msg['parameters'] |= {'last_id': 0}
 
-    with patch('wazuh.core.wazuh_socket.WazuhSocketJSON.receive',
+    with patch('som.core.som_socket.SomSocketJSON.receive',
                return_value=expected_socket_response) as mock_receive:
         result = stats.get_daemons_stats_socket(socket, agents_list=agents_list,
                                                 last_id=0 if agents_list == 'all' else None)
@@ -196,7 +196,7 @@ def test_get_daemons_stats_socket(mock__init__, mock_send, mock_close, agents_li
 def test_get_daemons_stats_socket_ko(agents_list):
     """Test get_daemons_stats_socket(socket : str) function exception works"""
     socket = '/test_path/socket'
-    with pytest.raises(WazuhInternalError, match=f".* 1121 .*: {socket}"):
+    with pytest.raises(SomInternalError, match=f".* 1121 .*: {socket}"):
         stats.get_daemons_stats_socket(socket, agents_list=agents_list)
 
 
@@ -209,12 +209,12 @@ def test_get_daemons_stats_():
 
 def test_get_daemons_stats_ko():
     """Test get_daemons_stats_() function exceptions works"""
-    with patch('wazuh.core.stats.open', side_effect=IOError):
-        with pytest.raises(WazuhException, match=".* 1308 .*"):
+    with patch('som.core.stats.open', side_effect=IOError):
+        with pytest.raises(SomException, match=".* 1308 .*"):
             stats.get_daemons_stats_('filename')
 
-    with patch('wazuh.core.stats.open'):
-        with pytest.raises(WazuhInternalError, match=".* 1104 .*"):
+    with patch('som.core.stats.open'):
+        with pytest.raises(SomInternalError, match=".* 1104 .*"):
             stats.get_daemons_stats_('filename')
 
 
@@ -225,10 +225,10 @@ def test_get_daemons_stats_ko():
 ])
 def test_get_daemons_stats_from_socket(agent_id, daemon, response):
     """Check that get_daemons_stats_from_socket() function uses the expected params and returns expected result"""
-    with patch('wazuh.core.wazuh_socket.WazuhSocket.__init__', return_value=None) as mock_socket:
-        with patch('wazuh.core.wazuh_socket.WazuhSocket.send', side_effect=None) as mock_send:
-            with patch('wazuh.core.wazuh_socket.WazuhSocket.receive', return_value=response.encode()):
-                with patch('wazuh.core.wazuh_socket.WazuhSocket.close', side_effect=None):
+    with patch('som.core.som_socket.SomSocket.__init__', return_value=None) as mock_socket:
+        with patch('som.core.som_socket.SomSocket.send', side_effect=None) as mock_send:
+            with patch('som.core.som_socket.SomSocket.receive', return_value=response.encode()):
+                with patch('som.core.som_socket.SomSocket.close', side_effect=None):
                     stats.get_daemons_stats_from_socket(agent_id, daemon)
 
         if agent_id == '000':
@@ -280,10 +280,10 @@ def test_get_daemons_stats_from_socket(agent_id, daemon, response):
 def test_get_daemons_stats_from_socket(agent_id, daemon, responses, expected, expected_socket_calls,
                                        expected_arg_calls):
     """Check that get_daemons_stats_from_socket() function uses the pagination logic"""
-    with patch('wazuh.core.wazuh_socket.WazuhSocket.__init__', return_value=None) as mock_socket:
-        with patch('wazuh.core.wazuh_socket.WazuhSocket.send', side_effect=None) as mock_send:
-            with patch('wazuh.core.wazuh_socket.WazuhSocket.receive', side_effect=responses):
-                with patch('wazuh.core.wazuh_socket.WazuhSocket.close', side_effect=None):
+    with patch('som.core.som_socket.SomSocket.__init__', return_value=None) as mock_socket:
+        with patch('som.core.som_socket.SomSocket.send', side_effect=None) as mock_send:
+            with patch('som.core.som_socket.SomSocket.receive', side_effect=responses):
+                with patch('som.core.som_socket.SomSocket.close', side_effect=None):
                     result = stats.get_daemons_stats_from_socket(agent_id, daemon)
 
     assert result == expected
@@ -328,23 +328,23 @@ def test_pagination_handler_updates_data(initial_data, data, expected):
 
 def test_get_daemons_stats_from_socket_ko():
     """Check if get_daemons_stats_from_socket() raises expected exceptions."""
-    with pytest.raises(WazuhError, match=r'\b1307\b'):
+    with pytest.raises(SomError, match=r'\b1307\b'):
         stats.get_daemons_stats_from_socket(None, None)
 
-    with pytest.raises(WazuhError, match=r'\b1310\b'):
+    with pytest.raises(SomError, match=r'\b1310\b'):
         stats.get_daemons_stats_from_socket('000', 'agent')
 
-    with pytest.raises(WazuhInternalError, match=r'\b1121\b'):
+    with pytest.raises(SomInternalError, match=r'\b1121\b'):
         stats.get_daemons_stats_from_socket('000', 'logcollector')
 
-    with patch('wazuh.core.wazuh_socket.WazuhSocket.__init__', return_value=None):
-        with patch('wazuh.core.wazuh_socket.WazuhSocket.close', side_effect=None):
-            with patch('wazuh.core.wazuh_socket.WazuhSocket.send', side_effect=None):
-                with patch('wazuh.core.wazuh_socket.WazuhSocket.receive', side_effect=ValueError):
-                    with pytest.raises(WazuhInternalError, match=r'\b1118\b'):
+    with patch('som.core.som_socket.SomSocket.__init__', return_value=None):
+        with patch('som.core.som_socket.SomSocket.close', side_effect=None):
+            with patch('som.core.som_socket.SomSocket.send', side_effect=None):
+                with patch('som.core.som_socket.SomSocket.receive', side_effect=ValueError):
+                    with pytest.raises(SomInternalError, match=r'\b1118\b'):
                         stats.get_daemons_stats_from_socket('000', 'logcollector')
 
-                with patch('wazuh.core.wazuh_socket.WazuhSocket.receive',
+                with patch('som.core.som_socket.SomSocket.receive',
                            return_value=json.dumps({'error': 1}).encode()):
-                    with pytest.raises(WazuhError, match=r'\b1117\b'):
+                    with pytest.raises(SomError, match=r'\b1117\b'):
                         stats.get_daemons_stats_from_socket('000', 'logcollector')

@@ -1,44 +1,44 @@
 #!/usr/bin/env python
-# Copyright (C) 2015, Wazuh Inc.
-# Created by Wazuh, Inc. <info@wazuh.com>.
+# Copyright (C) 2015, Som Inc.
+# Created by Som, Inc. <info@som.com>.
 # This program is free software; you can redistribute it and/or modify it under the terms of GPLv2
 
 from unittest.mock import patch
 
 import pytest
 
-from wazuh.tests.util import InitWDBSocketMock
+from som.tests.util import InitWDBSocketMock
 
-with patch('wazuh.core.common.wazuh_uid'):
-    with patch('wazuh.core.common.wazuh_gid'):
-        from wazuh.core.mitre import *
+with patch('som.core.common.som_uid'):
+    with patch('som.core.common.som_gid'):
+        from som.core.mitre import *
 
 
-@patch('wazuh.core.utils.WazuhDBConnection', return_value=InitWDBSocketMock(sql_schema_file='schema_mitre_test.sql'))
-def test_WazuhDBQueryMitreMetadata(mock_wdb):
+@patch('som.core.utils.SomDBConnection', return_value=InitWDBSocketMock(sql_schema_file='schema_mitre_test.sql'))
+def test_SomDBQueryMitreMetadata(mock_wdb):
     """Verify that the method connects correctly to the database and returns the correct type."""
-    db_query = WazuhDBQueryMitreMetadata()
+    db_query = SomDBQueryMitreMetadata()
     data = db_query.run()
 
-    assert isinstance(db_query, WazuhDBQueryMitre) and isinstance(data, dict)
+    assert isinstance(db_query, SomDBQueryMitre) and isinstance(data, dict)
 
 
 @pytest.mark.parametrize('wdb_query_class', [
-    WazuhDBQueryMitreGroups,
-    WazuhDBQueryMitreMitigations,
-    WazuhDBQueryMitreReferences,
-    WazuhDBQueryMitreTactics,
-    WazuhDBQueryMitreTechniques,
-    WazuhDBQueryMitreSoftware
+    SomDBQueryMitreGroups,
+    SomDBQueryMitreMitigations,
+    SomDBQueryMitreReferences,
+    SomDBQueryMitreTactics,
+    SomDBQueryMitreTechniques,
+    SomDBQueryMitreSoftware
 
 ])
-@patch('wazuh.core.utils.WazuhDBConnection', return_value=InitWDBSocketMock(sql_schema_file='schema_mitre_test.sql'))
-def test_WazuhDBQueryMitre_classes(mock_wdb, wdb_query_class):
+@patch('som.core.utils.SomDBConnection', return_value=InitWDBSocketMock(sql_schema_file='schema_mitre_test.sql'))
+def test_SomDBQueryMitre_classes(mock_wdb, wdb_query_class):
     """Verify that the method connects correctly to the database and returns the correct types."""
     db_query = wdb_query_class()
     data = db_query.run()
 
-    assert isinstance(db_query, WazuhDBQueryMitre) and isinstance(data, dict)
+    assert isinstance(db_query, SomDBQueryMitre) and isinstance(data, dict)
 
     # All items have all the related_items (relation_fields) and their type is list
     try:
@@ -50,14 +50,14 @@ def test_WazuhDBQueryMitre_classes(mock_wdb, wdb_query_class):
 
 
 @pytest.mark.parametrize('mitre_wdb_query_class', [
-    WazuhDBQueryMitreGroups,
-    WazuhDBQueryMitreMitigations,
-    WazuhDBQueryMitreReferences,
-    WazuhDBQueryMitreTactics,
-    WazuhDBQueryMitreTechniques,
-    WazuhDBQueryMitreSoftware
+    SomDBQueryMitreGroups,
+    SomDBQueryMitreMitigations,
+    SomDBQueryMitreReferences,
+    SomDBQueryMitreTactics,
+    SomDBQueryMitreTechniques,
+    SomDBQueryMitreSoftware
 ])
-@patch('wazuh.core.utils.WazuhDBConnection')
+@patch('som.core.utils.SomDBConnection')
 def test_get_mitre_items(mock_wdb, mitre_wdb_query_class):
     """Test get_mitre_items function."""
     info, data = get_mitre_items(mitre_wdb_query_class)

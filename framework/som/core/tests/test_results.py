@@ -1,6 +1,6 @@
 #!/usr/bin/env python
-# Copyright (C) 2015, Wazuh Inc.
-# Created by Wazuh, Inc. <info@wazuh.com>.
+# Copyright (C) 2015, Som Inc.
+# Created by Som, Inc. <info@som.com>.
 # This program is free software; you can redistribute it and/or modify it under the terms of GPLv2
 
 from copy import deepcopy
@@ -8,10 +8,10 @@ from unittest.mock import patch
 
 import pytest
 
-with patch('wazuh.core.common.wazuh_uid'):
-    with patch('wazuh.core.common.wazuh_gid'):
-        from wazuh.core.results import WazuhResult, AffectedItemsWazuhResult, _goes_before_than, nested_itemgetter, merge
-        from wazuh import WazuhException, WazuhError
+with patch('som.core.common.som_uid'):
+    with patch('som.core.common.som_gid'):
+        from som.core.results import SomResult, AffectedItemsSomResult, _goes_before_than, nested_itemgetter, merge
+        from som import SomException, SomError
 
 param_name = ['affected_items', 'total_affected_items', 'sort_fields', 'sort_casting', 'sort_ascending',
               'all_msg', 'some_msg', 'none_msg']
@@ -20,24 +20,24 @@ FAILED_AGENT_ID = '999'
 
 
 @pytest.fixture(scope='function')
-def get_wazuh_result():
-    return WazuhResult(dct={"data": {"items": [{"item1": "data1"}, {"item2": "OK"}], "message": "Everything ok"}},
+def get_som_result():
+    return SomResult(dct={"data": {"items": [{"item1": "data1"}, {"item2": "OK"}], "message": "Everything ok"}},
                        str_priority=['KO', 'OK'])
 
 
 @pytest.fixture(scope='function')
-def get_wazuh_affected_item():
+def get_som_affected_item():
     def _get_affected(params=None):
         kwargs = {p_name: param for p_name, param in zip(param_name, params)}
-        return AffectedItemsWazuhResult(**kwargs)
+        return AffectedItemsSomResult(**kwargs)
 
     return _get_affected
 
 
 @pytest.fixture(scope='function')
-def get_wazuh_failed_item():
-    item = AffectedItemsWazuhResult()
-    item.add_failed_item(id_=FAILED_AGENT_ID, error=WazuhException(WAZUH_EXCEPTION_CODE))
+def get_som_failed_item():
+    item = AffectedItemsSomResult()
+    item.add_failed_item(id_=FAILED_AGENT_ID, error=SomException(WAZUH_EXCEPTION_CODE))
     return item
 
 
@@ -45,42 +45,42 @@ def get_wazuh_failed_item():
     ({"data": {"items": [{"item1": "data1"}, {"item2": "OK"}], "message": "Everything ok"}}, ['KO', 'OK']),
     ({"data": {"items": [{"item1": "data1"}, {"item2": "data2"}], "message": "Everything ok"}}, None),
 ])
-def test_results_WazuhResult__merge_str(dikt, priority, get_wazuh_affected_item):
-    """Test method `_merge_str` from `WazuhResult`.
+def test_results_SomResult__merge_str(dikt, priority, get_som_affected_item):
+    """Test method `_merge_str` from `SomResult`.
 
         Parameters
         ----------
         dikt : dict
             Dict with basic information for the class declaration.
         priority : list
-            Used to set the WazuhResult priority.
+            Used to set the SomResult priority.
         """
-    wazuh_result = WazuhResult(deepcopy(dikt), str_priority=priority)
-    assert isinstance(wazuh_result, WazuhResult)
-    item2 = wazuh_result.dikt['data']['items'][1]['item2']
-    merge_result = wazuh_result._merge_str(item2, 'KO')
+    som_result = SomResult(deepcopy(dikt), str_priority=priority)
+    assert isinstance(som_result, SomResult)
+    item2 = som_result.dikt['data']['items'][1]['item2']
+    merge_result = som_result._merge_str(item2, 'KO')
     assert merge_result == priority[0] if priority else '{}|{}'.format(item2, 'KO')
 
 
-def test_results_WazuhResult_to_dict(get_wazuh_result):
-    """Test method `to_dict` from `WazuhResult`."""
-    dict_result = get_wazuh_result.to_dict()
+def test_results_SomResult_to_dict(get_som_result):
+    """Test method `to_dict` from `SomResult`."""
+    dict_result = get_som_result.to_dict()
     assert isinstance(dict_result, dict)
     assert (key == result_key for key, result_key in zip(['str_priority', 'result'], dict_result.keys()))
 
 
-def test_results_WazuhResult_render(get_wazuh_result):
-    """Test method `render` from `WazuhResult`."""
-    render_result = get_wazuh_result.render()
+def test_results_SomResult_render(get_som_result):
+    """Test method `render` from `SomResult`."""
+    render_result = get_som_result.render()
     assert isinstance(render_result, dict)
-    assert render_result == get_wazuh_result.dikt
+    assert render_result == get_som_result.dikt
 
 
-def test_results_WazuhResult_decode_json(get_wazuh_result):
-    """Test class method `decode_json` from `WazuhResult`."""
-    wazuh_result = get_wazuh_result
-    decoded_result = WazuhResult.decode_json(wazuh_result.to_dict())
-    assert decoded_result == wazuh_result
+def test_results_SomResult_decode_json(get_som_result):
+    """Test class method `decode_json` from `SomResult`."""
+    som_result = get_som_result
+    decoded_result = SomResult.decode_json(som_result.to_dict())
+    assert decoded_result == som_result
 
 
 @pytest.mark.parametrize('param_value', [
@@ -91,61 +91,61 @@ def test_results_WazuhResult_decode_json(get_wazuh_result):
     [[], 0, None, None, ['int'], None, 'Sample message', 'Sample message', 'Sample message'],
     [['001'], None, None, ['str'], None, 'Sample message', 'Sample message', 'Sample message']
 ])
-def test_results_AffectedItemsWazuhResult(get_wazuh_affected_item, param_value):
-    """Test class `AffectedItemsWazuhResult`.
+def test_results_AffectedItemsSomResult(get_som_affected_item, param_value):
+    """Test class `AffectedItemsSomResult`.
 
     Parameters
     ----------
     param_value : list
         List with param values for _init_.
     """
-    affected_result = get_wazuh_affected_item(param_value)
-    assert isinstance(affected_result, AffectedItemsWazuhResult)
+    affected_result = get_som_affected_item(param_value)
+    assert isinstance(affected_result, AffectedItemsSomResult)
     for value, dikt_value in zip(param_value, affected_result.dikt.values()):
         assert value == dikt_value
 
 
-def test_results_AffectedItemsWazuhResult_add_failed_item():
-    """Test method `add_failed_item` from class `AffectedItemsWazuhResult`."""
-    affected_result = AffectedItemsWazuhResult()
+def test_results_AffectedItemsSomResult_add_failed_item():
+    """Test method `add_failed_item` from class `AffectedItemsSomResult`."""
+    affected_result = AffectedItemsSomResult()
     id_list = ['001', '002']
     # Add two failed items with different id but same exception
     for agent_id in id_list:
-        affected_result.add_failed_item(id_=agent_id, error=WazuhException(WAZUH_EXCEPTION_CODE))
+        affected_result.add_failed_item(id_=agent_id, error=SomException(WAZUH_EXCEPTION_CODE))
 
     assert affected_result.failed_items
     assert set(id_list) == next(iter(affected_result.failed_items.values()))
 
 
-def test_results_AffectedItemsWazuhResult_add_failed_items_from(get_wazuh_failed_item):
-    """Test method `add_failed_items_from` from class `AffectedItemsWazuhResult`."""
-    affected_result = AffectedItemsWazuhResult()
-    failed_result = get_wazuh_failed_item
+def test_results_AffectedItemsSomResult_add_failed_items_from(get_som_failed_item):
+    """Test method `add_failed_items_from` from class `AffectedItemsSomResult`."""
+    affected_result = AffectedItemsSomResult()
+    failed_result = get_som_failed_item
     affected_result.add_failed_items_from(failed_result)
     assert affected_result.failed_items == failed_result.failed_items
 
 
-def test_results_AffectedItemsWazuhResult_add_failed_items_from_exception():
-    """Test raised exception from method `add_failed_items_from` from class `AffectedItemsWazuhResult`."""
-    affected_result = AffectedItemsWazuhResult()
-    with pytest.raises(WazuhException, match='.* 1000 .*'):
+def test_results_AffectedItemsSomResult_add_failed_items_from_exception():
+    """Test raised exception from method `add_failed_items_from` from class `AffectedItemsSomResult`."""
+    affected_result = AffectedItemsSomResult()
+    with pytest.raises(SomException, match='.* 1000 .*'):
         affected_result.add_failed_items_from('Invalid type')
 
 
-def test_results_AffectedItemsWazuhResult_remove_failed_items(get_wazuh_failed_item):
-    """Test method `remove_failed_items` from class `AffectedItemsWazuhResult`."""
-    failed_result = get_wazuh_failed_item
+def test_results_AffectedItemsSomResult_remove_failed_items(get_som_failed_item):
+    """Test method `remove_failed_items` from class `AffectedItemsSomResult`."""
+    failed_result = get_som_failed_item
     failed_result.remove_failed_items(code={WAZUH_EXCEPTION_CODE})
     assert not failed_result.failed_items
 
 
-def test_results_AffectedItemsWazuhResult___or__(get_wazuh_failed_item):
-    """Test method `__or__` from class `AffectedItemsWazuhResult`."""
+def test_results_AffectedItemsSomResult___or__(get_som_failed_item):
+    """Test method `__or__` from class `AffectedItemsSomResult`."""
     agent_list_1 = ['001', '002']
     agent_list_2 = ['004', '003']
-    affected_item_1 = AffectedItemsWazuhResult(affected_items=deepcopy(agent_list_1))
-    affected_item_2 = AffectedItemsWazuhResult(affected_items=deepcopy(agent_list_2))
-    failed_item = get_wazuh_failed_item
+    affected_item_1 = AffectedItemsSomResult(affected_items=deepcopy(agent_list_1))
+    affected_item_2 = AffectedItemsSomResult(affected_items=deepcopy(agent_list_2))
+    failed_item = get_som_failed_item
 
     # Expect 'affected_items': ['001', '002', '003']
     or_result_1 = affected_item_1 | affected_item_2
@@ -158,35 +158,35 @@ def test_results_AffectedItemsWazuhResult___or__(get_wazuh_failed_item):
 
 
 @pytest.mark.parametrize('or_item, expected_result', [
-    (WazuhError(WAZUH_EXCEPTION_CODE, ids=['001']), AffectedItemsWazuhResult),
-    (WazuhError(WAZUH_EXCEPTION_CODE), WazuhException),
-    (WazuhException(WAZUH_EXCEPTION_CODE), WazuhException),
+    (SomError(WAZUH_EXCEPTION_CODE, ids=['001']), AffectedItemsSomResult),
+    (SomError(WAZUH_EXCEPTION_CODE), SomException),
+    (SomException(WAZUH_EXCEPTION_CODE), SomException),
     ({'Invalid type': None}, None)
 ])
-def test_results_AffectedItemsWazuhResult___or___exceptions(or_item, expected_result):
-    """Test raised exceptions from method `__or__` from class `AffectedItemsWazuhResult`."""
-    affected_result = AffectedItemsWazuhResult()
+def test_results_AffectedItemsSomResult___or___exceptions(or_item, expected_result):
+    """Test raised exceptions from method `__or__` from class `AffectedItemsSomResult`."""
+    affected_result = AffectedItemsSomResult()
     # Force an exception trying to use __or__ with an invalid type
     try:
         or_result = affected_result | or_item
         assert isinstance(or_result, expected_result)
-    except WazuhException as e:
+    except SomException as e:
         if e.code != 1000:
             raise e
 
 
-def test_results_AffectedItemsWazuhResult_to_dict():
-    """Test method `to_dict` from class `AffectedItemsWazuhResult`."""
-    affected_result = AffectedItemsWazuhResult()
+def test_results_AffectedItemsSomResult_to_dict():
+    """Test method `to_dict` from class `AffectedItemsSomResult`."""
+    affected_result = AffectedItemsSomResult()
     dict_item = affected_result.to_dict()
     assert isinstance(dict_item, dict)
     assert dict_item
     assert (field == dict_field for field, dict_field in zip(affected_result, dict_item))
 
 
-def test_results_AffectedItemsWazuhResult_properties():
-    """Test getters and setters from class `AffectedItemsWazuhResult`."""
-    affected_result = AffectedItemsWazuhResult()
+def test_results_AffectedItemsSomResult_properties():
+    """Test getters and setters from class `AffectedItemsSomResult`."""
+    affected_result = AffectedItemsSomResult()
     # Lacks 'failed_items', 'total_failed_items' and 'message'
     property_list = ['affected_items', 'sort_fields', 'sort_casting', 'sort_ascending', 'total_affected_items',
                      'all_msg', 'some_msg', 'none_msg']
@@ -200,22 +200,22 @@ def test_results_AffectedItemsWazuhResult_properties():
         assert value == getattr(affected_result, key)
 
 
-def test_results_AffectedItemsWazuhResult_failed_items_properties(get_wazuh_failed_item):
-    """Test `failed_items` properties from class `AffectedItemsWazuhResult`."""
-    fail_items = get_wazuh_failed_item.failed_items
-    total_fail_items = get_wazuh_failed_item.total_failed_items
+def test_results_AffectedItemsSomResult_failed_items_properties(get_som_failed_item):
+    """Test `failed_items` properties from class `AffectedItemsSomResult`."""
+    fail_items = get_som_failed_item.failed_items
+    total_fail_items = get_som_failed_item.total_failed_items
     assert isinstance(fail_items, dict)
     assert total_fail_items == 1
 
 
-def test_results_AffectedItemsWazuhResult_message_property():
-    """Test `message` property from class `AffectedItemsWazuhResult`."""
+def test_results_AffectedItemsSomResult_message_property():
+    """Test `message` property from class `AffectedItemsSomResult`."""
     messages = {'none_msg': 'none_msg', 'all_msg': 'all_msg', 'some_msg': 'some_msg'}
     # Force every possible case since this property returns a different value depending on affected_items
-    none_msg_result = AffectedItemsWazuhResult(**messages).message
-    all_msg_result = AffectedItemsWazuhResult(**messages, affected_items=['001']).message
-    aux_result = AffectedItemsWazuhResult(**messages, affected_items=['001'])
-    aux_result.add_failed_item(WazuhException(WAZUH_EXCEPTION_CODE))
+    none_msg_result = AffectedItemsSomResult(**messages).message
+    all_msg_result = AffectedItemsSomResult(**messages, affected_items=['001']).message
+    aux_result = AffectedItemsSomResult(**messages, affected_items=['001'])
+    aux_result.add_failed_item(SomException(WAZUH_EXCEPTION_CODE))
     some_msg_result = aux_result.message
     assert messages
     assert len(messages) == 3
@@ -226,31 +226,31 @@ def test_results_AffectedItemsWazuhResult_message_property():
     ('Sample1', 'Sample2', 'older_than', 'Sample1'),
     ('Sample1', 'Sample2', None, 'Sample1|Sample2')
 ])
-def test_results_AffectedItemsWazuhResult__merge_str(self_field, other_field, key, expected_result):
-    """Test method `_merge_str` from class `AffectedItemsWazuhResult`."""
-    affected_result = AffectedItemsWazuhResult()
+def test_results_AffectedItemsSomResult__merge_str(self_field, other_field, key, expected_result):
+    """Test method `_merge_str` from class `AffectedItemsSomResult`."""
+    affected_result = AffectedItemsSomResult()
     merge_result = affected_result._merge_str(self_field, other_field, key=key)
     assert merge_result == expected_result
 
 
-def test_results_AffectedItemsWazuhResult_encode_decode_json(get_wazuh_affected_item):
-    """Test methods `encode_json` and `decode_json` from class `AffectedItemsWazuhResult`."""
+def test_results_AffectedItemsSomResult_encode_decode_json(get_som_affected_item):
+    """Test methods `encode_json` and `decode_json` from class `AffectedItemsSomResult`."""
     param_list = [['001', '002'], 2, None, ['int'], [True, True], 'Sample message', 'Sample message', 'Sample message']
-    affected_result = get_wazuh_affected_item(param_list)
-    affected_result.add_failed_item(id_=FAILED_AGENT_ID, error=WazuhException(WAZUH_EXCEPTION_CODE))
-    # Use a complete AffectedIemsWazuhResult to encode a json and then decode it
+    affected_result = get_som_affected_item(param_list)
+    affected_result.add_failed_item(id_=FAILED_AGENT_ID, error=SomException(WAZUH_EXCEPTION_CODE))
+    # Use a complete AffectedIemsSomResult to encode a json and then decode it
     json_item = affected_result.encode_json()
-    decoded_json = AffectedItemsWazuhResult.decode_json(json_item)
+    decoded_json = AffectedItemsSomResult.decode_json(json_item)
     assert affected_result == decoded_json
 
 
-def test_results_AffectedItemsWazuhResult_render(get_wazuh_affected_item):
-    """Test method `render` from class `AffectedItemsWazuhResult`."""
+def test_results_AffectedItemsSomResult_render(get_som_affected_item):
+    """Test method `render` from class `AffectedItemsSomResult`."""
     param_list = [['001', '002'], 2, None, ['int'], [True, True], 'Sample message', 'Sample message', 'Sample message']
-    affected_result = get_wazuh_affected_item(param_list)
+    affected_result = get_som_affected_item(param_list)
     for agent_id in [FAILED_AGENT_ID, 'Invalid ID']:
-        affected_result.add_failed_item(id_=agent_id, error=WazuhException(WAZUH_EXCEPTION_CODE))
-    # Render a valid AffectedItemsWazuhResult and check it has all the expected fields
+        affected_result.add_failed_item(id_=agent_id, error=SomException(WAZUH_EXCEPTION_CODE))
+    # Render a valid AffectedItemsSomResult and check it has all the expected fields
     render_result = affected_result.render()
     assert isinstance(render_result, dict)
     assert render_result

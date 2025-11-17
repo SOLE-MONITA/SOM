@@ -1,6 +1,6 @@
 #!/usr/bin/env python
-# Copyright (C) 2015, Wazuh Inc.
-# Created by Wazuh, Inc. <info@wazuh.com>.
+# Copyright (C) 2015, Som Inc.
+# Created by Som, Inc. <info@som.com>.
 # This program is free software; you can redistribute it and/or modify it under the terms of GPLv2
 
 import os
@@ -11,17 +11,17 @@ import pytest
 
 sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), '..', '..', '..', '..', 'api'))
 
-with patch('wazuh.core.common.wazuh_uid'):
-    with patch('wazuh.core.common.wazuh_gid'):
-        sys.modules['wazuh.rbac.orm'] = MagicMock()
-        import wazuh.rbac.decorators
+with patch('som.core.common.som_uid'):
+    with patch('som.core.common.som_gid'):
+        sys.modules['som.rbac.orm'] = MagicMock()
+        import som.rbac.decorators
 
-        del sys.modules['wazuh.rbac.orm']
-        from wazuh.tests.util import RBAC_bypasser
+        del sys.modules['som.rbac.orm']
+        from som.tests.util import RBAC_bypasser
 
-        wazuh.rbac.decorators.expose_resources = RBAC_bypasser
-        from wazuh.core.exception import WazuhError
-        from wazuh.core import rule
+        som.rbac.decorators.expose_resources = RBAC_bypasser
+        from som.core.exception import SomError
+        from som.core import rule
 
 # variables
 parent_directory = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
@@ -51,14 +51,14 @@ def test_add_detail(detail, value, details):
     ('all', 'all'),
     (rule.Status.S_ALL.value, 'all'),
     (None, 'all'),
-    ('unexistent', WazuhError(1202))
+    ('unexistent', SomError(1202))
 ])
 def test_check_status(status, expected_result):
     """Test check_status rule core function."""
     try:
         result = rule.check_status(status)
         assert result == expected_result
-    except WazuhError as e:
+    except SomError as e:
         assert e.code == expected_result.code
 
 
@@ -68,10 +68,10 @@ def test_check_status(status, expected_result):
     ('0225-mcafee_av_rules.xml', 'tests/data/rules', 'enabled', None),
     ('0260-nginx_rules.xml', 'tests/data/rules', 'enabled', None),
     ('0350-amazon_rules.xml', 'tests/data/rules', 'enabled', None),
-    ('noexists.xml', 'tests/data/rules', 'enabled', WazuhError(1201))
+    ('noexists.xml', 'tests/data/rules', 'enabled', SomError(1201))
 ])
-@patch("wazuh.core.common.WAZUH_PATH", new=parent_directory)
-@patch("wazuh.core.common.RULES_PATH", new=data_path)
+@patch("som.core.common.WAZUH_PATH", new=parent_directory)
+@patch("som.core.common.RULES_PATH", new=data_path)
 def test_load_rules_from_file(rule_file, rule_path, rule_status, exception):
     """Test set_groups rule core function."""
     try:
@@ -80,12 +80,12 @@ def test_load_rules_from_file(rule_file, rule_path, rule_status, exception):
             assert r['filename'] == rule_file
             assert r['relative_dirname'] == rule_path
             assert r['status'] == rule_status
-    except WazuhError as e:
+    except SomError as e:
         assert e.code == exception.code
 
 
-@patch("wazuh.core.common.WAZUH_PATH", new=parent_directory)
-@patch("wazuh.core.common.RULES_PATH", new=data_path)
+@patch("som.core.common.WAZUH_PATH", new=parent_directory)
+@patch("som.core.common.RULES_PATH", new=data_path)
 def test_load_rules_from_file_details():
     """Test set_groups rule core function."""
     rule_file = '9999-rules_regex_test.xml'
@@ -111,14 +111,14 @@ def test_load_rules_from_file_details():
     assert result[0]['details'] == details_result
 
 
-@patch("wazuh.core.rule.load_wazuh_xml", side_effect=OSError(13, 'Error', 'Permissions'))
+@patch("som.core.rule.load_som_xml", side_effect=OSError(13, 'Error', 'Permissions'))
 def test_load_rules_from_file_permissions(mock_load):
     """Test set_groups rule core function."""
-    with pytest.raises(WazuhError, match='.* 1207 .*'):
+    with pytest.raises(SomError, match='.* 1207 .*'):
         rule.load_rules_from_file('nopermissions.xml', 'tests/data/rules', 'disabled')
 
 
-@patch("wazuh.core.rule.load_wazuh_xml", side_effect=OSError(8, 'Error', 'Unknown'))
+@patch("som.core.rule.load_som_xml", side_effect=OSError(8, 'Error', 'Unknown'))
 def test_load_rules_from_file_unknown(mock_load):
     """Test set_groups rule core function."""
     with pytest.raises(OSError, match='.*[Errno 8].*'):

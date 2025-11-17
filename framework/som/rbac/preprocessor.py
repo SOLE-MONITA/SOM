@@ -1,14 +1,14 @@
-# Copyright (C) 2015, Wazuh Inc.
-# Created by Wazuh, Inc. <info@wazuh.com>.
+# Copyright (C) 2015, Som Inc.
+# Created by Som, Inc. <info@som.com>.
 # This program is a free software; you can redistribute it and/or modify it under the terms of GPLv2
 
 import re
 from typing import Union
 
-from wazuh.core.exception import WazuhError, WazuhPermissionError
-from wazuh.core.results import WazuhResult
-from wazuh.rbac.auth_context import RBAChecker, get_policies_from_roles
-from wazuh.rbac.orm import AuthenticationManager
+from som.core.exception import SomError, SomPermissionError
+from som.core.results import SomResult
+from som.rbac.auth_context import RBAChecker, get_policies_from_roles
+from som.rbac.orm import AuthenticationManager
 
 
 class PreProcessor:
@@ -75,7 +75,7 @@ class PreProcessor:
 
         Raises
         ------
-        WazuhError(4500)
+        SomError(4500)
             The specified resources are invalid.
         """
         resource_regex = \
@@ -88,10 +88,10 @@ class PreProcessor:
                 self.odict[action] = dict()
             for resource in policy['resources']:
                 if not re.match(resource_regex, resource):
-                    raise WazuhError(4500)
+                    raise SomError(4500)
                 resource_type = PreProcessor.is_combination(resource)
                 if len(resource_type[1]) > 2:
-                    raise WazuhError(4500, extra_remediation="The maximum length for permission combinations is two")
+                    raise SomError(4500, extra_remediation="The maximum length for permission combinations is two")
                 resource = resource_type[1] if resource != '*' else ['*:*:*']
                 self.remove_previous_elements(resource, action)
                 self.odict[action]['&'.join(resource)] = policy['effect']
@@ -150,7 +150,7 @@ def get_roles(auth_context: Union[dict, str] = None, user_id: int = None) -> lis
     return roles
 
 
-def get_permissions(user_id: int = None, auth_context: Union[dict, str] = None) -> WazuhResult:
+def get_permissions(user_id: int = None, auth_context: Union[dict, str] = None) -> SomResult:
     """Obtain the permissions of a user using auth_context or user_id.
 
     Parameters
@@ -162,17 +162,17 @@ def get_permissions(user_id: int = None, auth_context: Union[dict, str] = None) 
 
     Raises
     ------
-    WazuhPermissionError(6004)
+    SomPermissionError(6004)
         If the current user does not have authentication enabled through authorization context.
 
     Returns
     -------
-    WazuhResult
-        WazuhResult object with the user permissions.
+    SomResult
+        SomResult object with the user permissions.
     """
     with AuthenticationManager() as auth:
         if not auth.user_allow_run_as(user_id) and auth_context:
-            raise WazuhPermissionError(6004)
+            raise SomPermissionError(6004)
         elif auth.user_allow_run_as(user_id):
             roles = get_roles(auth_context=auth_context, user_id=user_id)
         else:
@@ -182,4 +182,4 @@ def get_permissions(user_id: int = None, auth_context: Union[dict, str] = None) 
             'roles': roles
         }
 
-        return WazuhResult(result)
+        return SomResult(result)

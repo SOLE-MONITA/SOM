@@ -1,5 +1,5 @@
-# Copyright (C) 2015, Wazuh Inc.
-# Created by Wazuh, Inc. <info@wazuh.com>.
+# Copyright (C) 2015, Som Inc.
+# Created by Som, Inc. <info@som.com>.
 # This program is a free software; you can redistribute it and/or modify it under the terms of GPLv2
 
 import os
@@ -10,13 +10,13 @@ from unittest.mock import patch, ANY
 import pytest
 
 from api.util import remove_nones_to_dict
-from wazuh.core.common import DATE_FORMAT
-from wazuh.core.exception import WazuhException
-from wazuh.core.utils import get_date_from_timestamp
+from som.core.common import DATE_FORMAT
+from som.core.exception import SomException
+from som.core.utils import get_date_from_timestamp
 
-with patch('wazuh.core.common.wazuh_uid'):
-    with patch('wazuh.core.common.wazuh_gid'):
-        from wazuh.core import rootcheck
+with patch('som.core.common.som_uid'):
+    with patch('som.core.common.som_gid'):
+        from som.core import rootcheck
 
 test_data_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'data', 'test_rootcheck')
 
@@ -58,16 +58,16 @@ def send_msg_to_wdb(msg, raw=False):
     return ['ok', dumps(result)] if raw else result
 
 
-@patch("wazuh.core.rootcheck.WazuhDBBackend")
-@patch("wazuh.core.rootcheck.WazuhDBQuery.__init__")
-@patch('wazuh.core.agent.Agent.get_basic_information')
-def test_WazuhDBQueryRootcheck_init(mock_info, mock_wazuhDBQuery, mock_backend):
-    """Test if WazuhDBQuery and WazuhDBBackend are called with expected parameters"""
-    test = rootcheck.WazuhDBQueryRootcheck(agent_id='100', offset=1, limit=1, sort=None, search='test', select=['log'],
+@patch("som.core.rootcheck.SomDBBackend")
+@patch("som.core.rootcheck.SomDBQuery.__init__")
+@patch('som.core.agent.Agent.get_basic_information')
+def test_SomDBQueryRootcheck_init(mock_info, mock_somDBQuery, mock_backend):
+    """Test if SomDBQuery and SomDBBackend are called with expected parameters"""
+    test = rootcheck.SomDBQueryRootcheck(agent_id='100', offset=1, limit=1, sort=None, search='test', select=['log'],
                                            query='test', count=True, get_data=True, distinct=False, filters=None,
                                            fields={})
     mock_backend.assert_called_with('100')
-    mock_wazuhDBQuery.assert_called_with(ANY, offset=1, limit=1, table='pm_event', sort=None, search='test',
+    mock_somDBQuery.assert_called_with(ANY, offset=1, limit=1, table='pm_event', sort=None, search='test',
                                          select=['log'], fields={}, default_sort_field='date_last',
                                          default_sort_order='DESC', filters={}, query='test', backend=ANY,
                                          min_select_fields=set(), count=True, get_data=True, distinct=False,
@@ -77,9 +77,9 @@ def test_WazuhDBQueryRootcheck_init(mock_info, mock_wazuhDBQuery, mock_backend):
 @pytest.mark.parametrize('distinct', [
     True, False
 ])
-@patch("wazuh.core.rootcheck.WazuhDBBackend")
-@patch('wazuh.core.agent.Agent.get_basic_information')
-def test_WazuhDBQueryRootcheck_default_query(mock_info, mock_backend, distinct):
+@patch("som.core.rootcheck.SomDBBackend")
+@patch('som.core.agent.Agent.get_basic_information')
+def test_SomDBQueryRootcheck_default_query(mock_info, mock_backend, distinct):
     """Test if default query is changed according to distinct parameter
 
     Parameters
@@ -87,7 +87,7 @@ def test_WazuhDBQueryRootcheck_default_query(mock_info, mock_backend, distinct):
     distinct : bool
         Whether to apply distinct to query
     """
-    test = rootcheck.WazuhDBQueryRootcheck(agent_id='100', offset=1, limit=1, sort=None, search='test', select=['log'],
+    test = rootcheck.SomDBQueryRootcheck(agent_id='100', offset=1, limit=1, sort=None, search='test', select=['log'],
                                            query='test', count=True, get_data=True, distinct=distinct, filters=None,
                                            fields={})
     if distinct:
@@ -96,15 +96,15 @@ def test_WazuhDBQueryRootcheck_default_query(mock_info, mock_backend, distinct):
         assert test._default_query() == "SELECT {0} FROM "
 
 
-@patch("wazuh.core.rootcheck.WazuhDBBackend")
-@patch('wazuh.core.agent.Agent.get_basic_information')
-def test_WazuhDBQueryRootcheck_parse_filters(mock_info, mock_backend):
+@patch("som.core.rootcheck.SomDBBackend")
+@patch('som.core.agent.Agent.get_basic_information')
+def test_SomDBQueryRootcheck_parse_filters(mock_info, mock_backend):
     """Test if expected query_filters are created after calling _parse_filters() method."""
     expected_query_filters = [{'value': 'all', 'field': 'status$0', 'operator': '=', 'separator': 'AND', 'level': 0},
                               {'value': None, 'field': 'pci_dss$0', 'operator': '=', 'separator': 'AND', 'level': 0},
                               {'value': None, 'field': 'cis$0', 'operator': '=', 'separator': '', 'level': 0}]
 
-    test = rootcheck.WazuhDBQueryRootcheck(agent_id='100', offset=1, limit=1, sort=None, search='test', select=['log'],
+    test = rootcheck.SomDBQueryRootcheck(agent_id='100', offset=1, limit=1, sort=None, search='test', select=['log'],
                                            query='', count=True, get_data=True, distinct=False, fields={},
                                            filters={'status': 'all', 'pci_dss': None, 'cis': None})
     # Check it is empty before calling _parse_filters()
@@ -118,9 +118,9 @@ def test_WazuhDBQueryRootcheck_parse_filters(mock_info, mock_backend):
     ('solved', ['solved', '<=']),
     ('all', ['solved', 'outstanding', '<=', '>', 'UNION'])
 ])
-@patch("wazuh.core.rootcheck.WazuhDBBackend")
-@patch('wazuh.core.agent.Agent.get_basic_information')
-def test_WazuhDBQueryRootcheck_filter_status(mock_info, mock_backend, status, expected_items):
+@patch("som.core.rootcheck.SomDBBackend")
+@patch('som.core.agent.Agent.get_basic_information')
+def test_SomDBQueryRootcheck_filter_status(mock_info, mock_backend, status, expected_items):
     """Test if the query has the expected items after calling _filter_status() method
 
     Parameters
@@ -130,7 +130,7 @@ def test_WazuhDBQueryRootcheck_filter_status(mock_info, mock_backend, status, ex
     expected_items : list
         Items which should be included in the query depending on the selected status
     """
-    test = rootcheck.WazuhDBQueryRootcheck(agent_id='100', offset=1, limit=1, sort=None, search='test', select=['log'],
+    test = rootcheck.SomDBQueryRootcheck(agent_id='100', offset=1, limit=1, sort=None, search='test', select=['log'],
                                            query='', count=True, get_data=True, distinct=False, fields={},
                                            filters={'status': 'all', 'pci_dss': None, 'cis': None})
 
@@ -138,26 +138,26 @@ def test_WazuhDBQueryRootcheck_filter_status(mock_info, mock_backend, status, ex
     assert all(item in test.query for item in expected_items)
 
 
-@patch("wazuh.core.rootcheck.WazuhDBBackend")
-@patch('wazuh.core.agent.Agent.get_basic_information')
-def test_WazuhDBQueryRootcheck_filter_status_ko(mock_info, mock_backend):
+@patch("som.core.rootcheck.SomDBBackend")
+@patch('som.core.agent.Agent.get_basic_information')
+def test_SomDBQueryRootcheck_filter_status_ko(mock_info, mock_backend):
     """Test if expected exception is raised when status does not exist"""
-    test = rootcheck.WazuhDBQueryRootcheck(agent_id='100', offset=1, limit=1, sort=None, search='test', select=['log'],
+    test = rootcheck.SomDBQueryRootcheck(agent_id='100', offset=1, limit=1, sort=None, search='test', select=['log'],
                                            query='', count=True, get_data=True, distinct=False, fields={},
                                            filters={'status': 'all', 'pci_dss': None, 'cis': None})
 
-    with pytest.raises(WazuhException, match=".* 1603 .*"):
+    with pytest.raises(SomException, match=".* 1603 .*"):
         test._filter_status({'value': 'test'})
 
 
-@patch("wazuh.core.rootcheck.WazuhDBBackend")
-@patch('wazuh.core.agent.Agent.get_basic_information')
-def test_WazuhDBQueryRootcheck_format_data_into_dictionary(mock_info, mock_backend):
+@patch("som.core.rootcheck.SomDBBackend")
+@patch('som.core.agent.Agent.get_basic_information')
+def test_SomDBQueryRootcheck_format_data_into_dictionary(mock_info, mock_backend):
     """Test if format_data_into_dictionary() returns expected element"""
-    test = rootcheck.WazuhDBQueryRootcheck(agent_id='100', offset=1, limit=1, sort=None, search='test',
+    test = rootcheck.SomDBQueryRootcheck(agent_id='100', offset=1, limit=1, sort=None, search='test',
                                            select=['log', 'date_first', 'status', 'date_last', 'cis', 'pci_dss'],
                                            query='', count=True, get_data=True, distinct=False,
-                                           fields=rootcheck.WazuhDBQueryRootcheck.fields,
+                                           fields=rootcheck.SomDBQueryRootcheck.fields,
                                            filters={'status': 'all', 'pci_dss': None, 'cis': None})
     test._add_select_to_query()
     test._data = [{'log': 'Testing', 'date_first': 1603645251, 'status': 'solved', 'date_last': 1603648851,
@@ -168,8 +168,8 @@ def test_WazuhDBQueryRootcheck_format_data_into_dictionary(mock_info, mock_backe
            result['items'][0]['date_last'] == get_date_from_timestamp(1603648851).strftime(DATE_FORMAT)
 
 
-@patch('wazuh.core.agent.Agent.get_basic_information')
-@patch('wazuh.core.wdb.WazuhDBConnection._send', side_effect=send_msg_to_wdb)
+@patch('som.core.agent.Agent.get_basic_information')
+@patch('som.core.wdb.SomDBConnection._send', side_effect=send_msg_to_wdb)
 @patch('socket.socket.connect')
 def test_last_scan(mock_connect, mock_send, mock_info):
     """Check if last_scan function returns expected datetime according to the database"""
@@ -181,16 +181,16 @@ remove_db(test_data_path)
 
 
 @pytest.mark.parametrize('agent', ['001', '002', '003'])
-@patch('wazuh.core.wdb.WazuhDBConnection')
+@patch('som.core.wdb.SomDBConnection')
 def test_rootcheck_delete_agent(mock_db_conn, agent):
-    """Test if proper parameters are being sent to the wazuhdb socket.
+    """Test if proper parameters are being sent to the somdb socket.
 
     Parameters
     ----------
     agent : str
         Agent whose information is being deleted from the db.
-    mock_db_conn : WazuhDBConnection
-        Object used to send the delete message to the wazuhdb socket.
+    mock_db_conn : SomDBConnection
+        Object used to send the delete message to the somdb socket.
     """
     rootcheck.rootcheck_delete_agent(agent, mock_db_conn)
     mock_db_conn.execute.assert_called_with(f"agent {agent} rootcheck delete", delete=True)

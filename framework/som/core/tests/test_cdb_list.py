@@ -1,6 +1,6 @@
 #!/usr/bin/env python
-# Copyright (C) 2015, Wazuh Inc.
-# Created by Wazuh, Inc. <info@wazuh.com>.
+# Copyright (C) 2015, Som Inc.
+# Created by Som, Inc. <info@som.com>.
 # This program is free software; you can redistribute it and/or modify it under the terms of GPLv2
 
 import os
@@ -9,13 +9,13 @@ import shutil
 
 import pytest
 
-with patch('wazuh.core.common.wazuh_uid'):
-    with patch('wazuh.core.common.wazuh_gid'):
-        from wazuh.core import common
-        from wazuh.core.cdb_list import check_path, get_list_from_file, iterate_lists, \
+with patch('som.core.common.som_uid'):
+    with patch('som.core.common.som_gid'):
+        from som.core import common
+        from som.core.cdb_list import check_path, get_list_from_file, iterate_lists, \
             split_key_value_with_quotes, validate_cdb_list, create_list_file, delete_list, get_filenames_paths
-        from wazuh.core.exception import WazuhError
-        from wazuh.rbac.utils import RESOURCES_CACHE
+        from som.core.exception import SomError
+        from som.rbac.utils import RESOURCES_CACHE
 
 
 # Variables
@@ -26,14 +26,14 @@ PERMISSION_ERROR_CODE = 1803
 INVALID_FILEPATH_ERROR_CODE = 1804
 
 ABSOLUTE_PATH = os.path.join(os.path.dirname(os.path.realpath(__file__)), "data", "test_cdb_list")
-RELATIVE_PATH = os.path.join("framework", "wazuh", "core", "tests", "data", "test_cdb_list")
+RELATIVE_PATH = os.path.join("framework", "som", "core", "tests", "data", "test_cdb_list")
 PATH_FILE = os.path.join(RELATIVE_PATH, "test_lists")
 
-CONTENT_FILE = {'test-wazuh-w': 'write',
-                'test-wazuh-r': 'read',
-                'test-wazuh-a': 'attribute',
-                'test-wazuh-x': 'execute',
-                'test-wazuh-c': 'command',
+CONTENT_FILE = {'test-som-w': 'write',
+                'test-som-r': 'read',
+                'test-som-a': 'attribute',
+                'test-som-x': 'execute',
+                'test-som-c': 'command',
                 'test-key': 'value:1',
                 'test-key:1': 'value',
                 'test-key:2': 'value:2',
@@ -70,7 +70,7 @@ def test_check_path(path, error_expected):
     try:
         check_path(path)
         assert not error_expected
-    except WazuhError as error:
+    except SomError as error:
         if error._code != 1801 or not error_expected:
             raise
 
@@ -130,7 +130,7 @@ def test_split_key_value_with_quotes(line, expected_key, expected_value):
         key, value = split_key_value_with_quotes(line)
         assert key == expected_key and value == expected_value
     else:
-        with pytest.raises(WazuhError) as e:
+        with pytest.raises(SomError) as e:
             split_key_value_with_quotes(line)
         assert e.value.code == 1800
 
@@ -151,33 +151,33 @@ def test_get_list_from_file(raw):
         assert get_list_from_file(full_path, raw) == CONTENT_FILE
 
 
-@pytest.mark.parametrize("error_to_raise, wazuh_error_code", [
+@pytest.mark.parametrize("error_to_raise, som_error_code", [
     (OSError(2, "No such file or directory"), LIST_FILE_NOT_FOUND_ERROR_CODE),
     (OSError(13, "Permission denied"), PERMISSION_ERROR_CODE),
     (OSError(21, "Is a directory"), INVALID_FILEPATH_ERROR_CODE),
     (OSError(1, "Random"), None),
     (ValueError(), BAD_CDB_FORMAT_ERROR_CODE)
 ])
-def test_get_list_from_file_with_errors(error_to_raise, wazuh_error_code):
+def test_get_list_from_file_with_errors(error_to_raise, som_error_code):
     """Test `get_list_from_file` core functionality when using invalid files or paths as parameter.
 
-    `get_list_from_file` must raise the proper WazuhError when facing certain scenarios like a Permission Denied error
+    `get_list_from_file` must raise the proper SomError when facing certain scenarios like a Permission Denied error
     when opening a file.
 
     Parameters
     ----------
     error_to_raise : OSError
         The `OSError` that `get_list_from_file` must catch when trying to open a file.
-    wazuh_error_code : int
-        Error code of the `WazuhError` that must be raised by `get_list_from_file` when the specified `OSError` occurrs.
+    som_error_code : int
+        Error code of the `SomError` that must be raised by `get_list_from_file` when the specified `OSError` occurrs.
     """
     with patch("builtins.open", mock_open()) as mock:
         mock.side_effect = error_to_raise
         try:
             get_list_from_file("some_path")
             pytest.fail("No exception was raised hence failing the test")
-        except WazuhError as e:
-            assert e.code == wazuh_error_code
+        except SomError as e:
+            assert e.code == som_error_code
         except Exception as e:
             assert e.args == (1, "Random")
 
@@ -185,53 +185,53 @@ def test_get_list_from_file_with_errors(error_to_raise, wazuh_error_code):
 def test_validate_cdb_list():
     """Test validate_cdb function"""
     with open(os.path.join(common.WAZUH_PATH, PATH_FILE)) as f:
-        wazuh_cdb_list = f.read()
+        som_cdb_list = f.read()
 
     try:
-        validate_cdb_list(wazuh_cdb_list)
-    except WazuhError:
+        validate_cdb_list(som_cdb_list)
+    except SomError:
         pytest.fail('validate_cdb_list raised an exception but no exception was expected')
 
 
 def test_validate_cdb_list_ko():
     """Test that validate_cdb_list raises expected exceptions."""
     # Exception when content is empty
-    with pytest.raises(WazuhError, match=r'\b1112\b'):
+    with pytest.raises(SomError, match=r'\b1112\b'):
         validate_cdb_list('')
 
     # Raise exeption when using invalid CDB list
-    with pytest.raises(WazuhError, match=r'\b1800\b'):
+    with pytest.raises(SomError, match=r'\b1800\b'):
         validate_cdb_list("test:key:testvalue\n")
 
 
-@patch('wazuh.core.cdb_list.chmod')
-@patch('wazuh.core.cdb_list.delete_wazuh_file')
+@patch('som.core.cdb_list.chmod')
+@patch('som.core.cdb_list.delete_som_file')
 def test_create_list_file(mock_delete, mock_chmod):
     """Test that create_list_file function works as expected"""
 
     with open(os.path.join(common.WAZUH_PATH, PATH_FILE)) as f:
-        with patch('wazuh.core.cdb_list.common.WAZUH_PATH', new='/var/ossec'):
+        with patch('som.core.cdb_list.common.WAZUH_PATH', new='/var/ossec'):
             with patch('builtins.open') as mock_open:
-                wazuh_cdb_list = f.read()
-                result = create_list_file('/test/path', wazuh_cdb_list, permissions=0o660)
-                assert mock_open.return_value.__enter__().write.call_count == len(wazuh_cdb_list.split('\n'))-1
+                som_cdb_list = f.read()
+                result = create_list_file('/test/path', som_cdb_list, permissions=0o660)
+                assert mock_open.return_value.__enter__().write.call_count == len(som_cdb_list.split('\n'))-1
 
     mock_chmod.assert_called_once_with('/test/path', 0o660)
 
 
 def test_create_list_file_ko():
     """Test that create_list_file function works and methods inside are called with expected parameters."""
-    with pytest.raises(WazuhError, match=r'\b1806\b'):
+    with pytest.raises(SomError, match=r'\b1806\b'):
         create_list_file(full_path='/test/path', content=' ')
 
 
-@patch('wazuh.core.cdb_list.remove')
-@patch('wazuh.core.cdb_list.delete_wazuh_file')
-def test_delete_list(mock_delete_wazuh_file, mock_remove):
+@patch('som.core.cdb_list.remove')
+@patch('som.core.cdb_list.delete_som_file')
+def test_delete_list(mock_delete_som_file, mock_remove):
     """Check that delete_list function uses expected params."""
     path = 'etc/list/test_list'
     delete_list(path)
-    mock_delete_wazuh_file.assert_called_once_with(os.path.join(common.WAZUH_PATH, path))
+    mock_delete_som_file.assert_called_once_with(os.path.join(common.WAZUH_PATH, path))
     mock_remove.assert_called_once_with(os.path.join(common.WAZUH_PATH, path + '.cdb'))
 
 

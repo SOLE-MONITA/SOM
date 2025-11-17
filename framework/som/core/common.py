@@ -1,5 +1,5 @@
-# Copyright (C) 2025, Wazuh Inc.
-# Created by Wazuh, Inc. <info@som.com>.
+# Copyright (C) 2025, Som Inc.
+# Created by Som, Inc. <info@som.com>.
 # This program is free software; you can redistribute it and/or modify it under the terms of GPLv2
 
 import json
@@ -17,12 +17,12 @@ from typing import Any, Dict
 # ===================================================== Functions ======================================================
 @lru_cache(maxsize=None)
 def find_som_path() -> str:
-    """Get the Wazuh installation path.
+    """Get the Som installation path.
 
     Returns
     -------
     str
-        Path where Wazuh is installed or empty string if there is no framework in the environment.
+        Path where Som is installed or empty string if there is no framework in the environment.
     """
     abs_path = os.path.abspath(os.path.dirname(__file__))
     allparts = []
@@ -156,7 +156,7 @@ mp_pools: ContextVar[Dict] = ContextVar('mp_pools',default={})
 _context_cache = dict()
 
 
-# =========================================== Wazuh constants and variables ============================================
+# =========================================== Som constants and variables ============================================
 # Token cache clear event.
 token_cache_event = Event()
 _SOM_UID = None
@@ -166,24 +166,24 @@ USER_NAME = 'som'
 SOM_PATH = find_som_path()
 
 
-# ============================================= Wazuh constants - Commands =============================================
+# ============================================= Som constants - Commands =============================================
 CHECK_CONFIG_COMMAND = 'check-manager-configuration'
 RESTART_SOM_COMMAND = 'restart-som'
 
 
-# =========================================== Wazuh constants - Date format ============================================
+# =========================================== Som constants - Date format ============================================
 DATE_FORMAT = "%Y-%m-%dT%H:%M:%SZ"
 DECIMALS_DATE_FORMAT = "%Y-%m-%dT%H:%M:%S.%fZ"
 
 
-# ============================================ Wazuh constants - Extensions ============================================
+# ============================================ Som constants - Extensions ============================================
 RULES_EXTENSION = '.xml'
 DECODERS_EXTENSION = '.xml'
 LISTS_EXTENSION = ''
 COMPILED_LISTS_EXTENSION = '.cdb'
 
 
-# ========================================= Wazuh constants - Size and limits ==========================================
+# ========================================= Som constants - Size and limits ==========================================
 MAX_SOCKET_BUFFER_SIZE = 64 * 1024  # 64KB.
 MAX_QUERY_FILTERS_RESERVED_SIZE = MAX_SOCKET_BUFFER_SIZE - 4 * 1024  # MAX_BUFFER_SIZE - 4KB.
 AGENT_NAME_LEN_LIMIT = 128
@@ -192,17 +192,17 @@ MAXIMUM_DATABASE_LIMIT = 100000
 MAX_GROUPS_PER_MULTIGROUP = 128
 
 
-# ============================================= Wazuh constants - Version ==============================================
+# ============================================= Som constants - Version ==============================================
 # Agent upgrading variables.
 WPK_REPO_URL_4_X = "packages.som.com/4.x/wpk/"
 # Agent component stats required version.
 AGENT_COMPONENT_STATS_REQUIRED_VERSION = {'logcollector': 'v4.2.0', 'agent': 'v4.2.0'}
 # Version variables (legacy, required, etc).
-AR_LEGACY_VERSION = 'Wazuh v4.2.0'
-ACTIVE_CONFIG_VERSION = 'Wazuh v3.7.0'
+AR_LEGACY_VERSION = 'Som v4.2.0'
+ACTIVE_CONFIG_VERSION = 'Som v3.7.0'
 
 
-# ================================================ Wazuh path - Config =================================================
+# ================================================ Som path - Config =================================================
 OSSEC_CONF = os.path.join(SOM_PATH, 'etc', 'ossec.conf')
 INTERNAL_OPTIONS_CONF = os.path.join(SOM_PATH, 'etc', 'internal_options.conf')
 LOCAL_INTERNAL_OPTIONS_CONF = os.path.join(SOM_PATH, 'etc', 'local_internal_options.conf')
@@ -211,7 +211,7 @@ CLIENT_KEYS = os.path.join(SOM_PATH, 'etc', 'client.keys')
 SHARED_PATH = os.path.join(SOM_PATH, 'etc', 'shared')
 
 
-# ================================================= Wazuh path - Misc ==================================================
+# ================================================= Som path - Misc ==================================================
 SOM_LOGS = os.path.join(SOM_PATH, 'logs')
 SOM_LOG = os.path.join(SOM_LOGS, 'ossec.log')
 SOM_LOG_JSON = os.path.join(SOM_LOGS, 'ossec.json')
@@ -229,7 +229,7 @@ MULTI_GROUPS_PATH = os.path.join(SOM_PATH, 'var', 'multigroups')
 DEFAULT_RBAC_RESOURCES = os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), 'rbac', 'default')
 
 
-# ================================================ Wazuh path - Sockets ================================================
+# ================================================ Som path - Sockets ================================================
 ANALYSISD_SOCKET = os.path.join(SOM_PATH, 'queue', 'sockets', 'analysis')
 AR_SOCKET = os.path.join(SOM_PATH, 'queue', 'alerts', 'ar')
 EXECQ_SOCKET = os.path.join(SOM_PATH, 'queue', 'alerts', 'execq')
@@ -245,7 +245,7 @@ WMODULES_SOCKET = os.path.join(SOM_PATH, 'queue', 'sockets', 'wmodules')
 QUEUE_SOCKET = os.path.join(SOM_PATH, 'queue', 'sockets', 'queue')
 
 
-# ================================================ Wazuh path - Ruleset ================================================
+# ================================================ Som path - Ruleset ================================================
 RULESET_PATH = os.path.join(SOM_PATH, 'ruleset')
 RULES_PATH = os.path.join(RULESET_PATH, 'rules')
 DECODERS_PATH = os.path.join(RULESET_PATH, 'decoders')

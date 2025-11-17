@@ -1,5 +1,5 @@
-# Copyright (C) 2015, Wazuh Inc.
-# Created by Wazuh, Inc. <info@wazuh.com>.
+# Copyright (C) 2015, Som Inc.
+# Created by Som, Inc. <info@som.com>.
 # This program is a free software; you can redistribute it and/or modify it under the terms of GPLv2
 
 from datetime import datetime, timezone
@@ -8,10 +8,10 @@ from unittest.mock import call, patch, ANY
 
 import pytest
 
-with patch('wazuh.core.common.wazuh_uid'):
-    with patch('wazuh.core.common.wazuh_gid'):
-        from wazuh.core import sca as core_sca
-        from wazuh.core.exception import WazuhError
+with patch('som.core.common.som_uid'):
+    with patch('som.core.common.som_gid'):
+        from som.core import sca as core_sca
+        from som.core.exception import SomError
 
 
 @pytest.mark.parametrize('agent_id, offset, limit, sort, search, select, query, count, get_data', [
@@ -21,12 +21,12 @@ with patch('wazuh.core.common.wazuh_uid'):
 @pytest.mark.parametrize('distinct', [
     True, False
 ])
-@patch('wazuh.core.agent.Agent.get_basic_information')
-@patch('wazuh.core.utils.WazuhDBBackend.__init__', return_value=None)
-@patch('wazuh.core.utils.WazuhDBQuery.__init__')
-def test_WazuhDBQuerySCA__init__(mock_wdbq, mock_backend, mock_get_basic_info, distinct, agent_id, offset, limit, sort,
+@patch('som.core.agent.Agent.get_basic_information')
+@patch('som.core.utils.SomDBBackend.__init__', return_value=None)
+@patch('som.core.utils.SomDBQuery.__init__')
+def test_SomDBQuerySCA__init__(mock_wdbq, mock_backend, mock_get_basic_info, distinct, agent_id, offset, limit, sort,
                                  search, query, count, get_data, select):
-    """Test if method __init__ of WazuhDBQuerySCA works properly.
+    """Test if method __init__ of SomDBQuerySCA works properly.
 
     Parameters
     ----------
@@ -51,7 +51,7 @@ def test_WazuhDBQuerySCA__init__(mock_wdbq, mock_backend, mock_get_basic_info, d
     distinct: bool
         Look for distinct values.
     """
-    wdbq_sca = core_sca.WazuhDBQuerySCA(agent_id=agent_id, offset=offset, limit=limit, sort=sort, search=search,
+    wdbq_sca = core_sca.SomDBQuerySCA(agent_id=agent_id, offset=offset, limit=limit, sort=sort, search=search,
                                         select=select, query=query, count=count, get_data=get_data, distinct=distinct)
     wdbq_sca.agent_id = agent_id
     wdbq_sca.default_query = 'SELECT {0} FROM sca_policy sca INNER JOIN sca_scan_info si ON sca.id=si.policy_id' \
@@ -60,7 +60,7 @@ def test_WazuhDBQuerySCA__init__(mock_wdbq, mock_backend, mock_get_basic_info, d
 
     mock_get_basic_info.assert_called_once()
     mock_wdbq.assert_called_once_with(ANY, offset=offset, limit=limit, table='sca_policy', sort=sort, search=search,
-                                      select=select, fields=core_sca.WazuhDBQuerySCA.DB_FIELDS,
+                                      select=select, fields=core_sca.SomDBQuerySCA.DB_FIELDS,
                                       default_sort_field='policy_id', default_sort_order='DESC', filters={},
                                       query=query, count=count, get_data=get_data,
                                       date_fields={'end_scan', 'start_scan'},
@@ -72,9 +72,9 @@ def test_WazuhDBQuerySCA__init__(mock_wdbq, mock_backend, mock_get_basic_info, d
     ('001', 0, 10, {'order': 'asc'}, {'value': 'test', 'negation': True},
      {'id', 'start_scan', 'end_scan', 'policy_id', 'pass', 'fail'}, None, False, True),
 ])
-def test_WazuhDBQuerySCA__format_data_into_dictionary(agent_id, offset, limit, sort, search, select, query, count,
+def test_SomDBQuerySCA__format_data_into_dictionary(agent_id, offset, limit, sort, search, select, query, count,
                                                       get_data):
-    """Check if WazuhDBQuerySCA's method _format_data_into_dictionary works properly.
+    """Check if SomDBQuerySCA's method _format_data_into_dictionary works properly.
 
     Parameters
     ----------
@@ -102,9 +102,9 @@ def test_WazuhDBQuerySCA__format_data_into_dictionary(agent_id, offset, limit, s
         {'id': 10, 'start_scan': 1556125759, 'end_scan': 1556125760, 'policy_id': 'cis_debian', 'pass': 20, 'fail': 6}
     ]
 
-    with patch('wazuh.core.utils.WazuhDBBackend.__init__', return_value=None), \
-            patch('wazuh.core.agent.Agent.get_basic_information'):
-        wdbq_sca = core_sca.WazuhDBQuerySCA(agent_id=agent_id, offset=offset, limit=limit, sort=sort, search=search,
+    with patch('som.core.utils.SomDBBackend.__init__', return_value=None), \
+            patch('som.core.agent.Agent.get_basic_information'):
+        wdbq_sca = core_sca.SomDBQuerySCA(agent_id=agent_id, offset=offset, limit=limit, sort=sort, search=search,
                                             select=select, query=query, count=count, get_data=get_data)
 
     wdbq_sca._data = data
@@ -125,9 +125,9 @@ def test_WazuhDBQuerySCA__format_data_into_dictionary(agent_id, offset, limit, s
 @pytest.mark.parametrize('select', [
     ['test'], [], None
 ])
-@patch('wazuh.core.sca.WazuhDBQuerySCA.__init__')
-def test_WazuhDBQuerySCACheck__init__(mock_wdbqsca, select, sca_checks_test_list, expected_default_query):
-    """Test if method __init__ of WazuhDBQuerySCACheck works properly.
+@patch('som.core.sca.SomDBQuerySCA.__init__')
+def test_SomDBQuerySCACheck__init__(mock_wdbqsca, select, sca_checks_test_list, expected_default_query):
+    """Test if method __init__ of SomDBQuerySCACheck works properly.
 
     Parameters
     ----------
@@ -138,7 +138,7 @@ def test_WazuhDBQuerySCACheck__init__(mock_wdbqsca, select, sca_checks_test_list
     expected_default_query : str
         Expected default query.
     """
-    core_sca.WazuhDBQuerySCACheck(agent_id='000', select=select, sort={'fields': ['title'], 'order': 'asc'},
+    core_sca.SomDBQuerySCACheck(agent_id='000', select=select, sort={'fields': ['title'], 'order': 'asc'},
                                   sca_checks_ids=sca_checks_test_list)
     select = {'id'} if select == [] else select
 
@@ -151,16 +151,16 @@ def test_WazuhDBQuerySCACheck__init__(mock_wdbqsca, select, sca_checks_test_list
                                          default_sort_field='id', default_sort_order='ASC', query='')
 
 
-@patch('wazuh.core.utils.WazuhDBBackend.__init__', return_value=None)
-@patch('wazuh.core.agent.Agent.get_basic_information')
+@patch('som.core.utils.SomDBBackend.__init__', return_value=None)
+@patch('som.core.agent.Agent.get_basic_information')
 @patch('os.path.exists', return_value=True)
-def test_WazuhDBQuerySCACheck_parse_select_filter(mock_exists, mock_get_basic_info, mock_backend):
-    """Test if method _parse_select_filter of WazuhDBQuerySCACheck works properly."""
-    wdbq_sca_check = core_sca.WazuhDBQuerySCACheck(agent_id='000', sort={'value': 'test'},
+def test_SomDBQuerySCACheck_parse_select_filter(mock_exists, mock_get_basic_info, mock_backend):
+    """Test if method _parse_select_filter of SomDBQuerySCACheck works properly."""
+    wdbq_sca_check = core_sca.SomDBQuerySCACheck(agent_id='000', sort={'value': 'test'},
                                                    select=['test'], sca_checks_ids=[])
     try:
         wdbq_sca_check._parse_select_filter(['test'])
-    except WazuhError as e:
+    except SomError as e:
         assert e.code == 1724
         expected_fields = set(wdbq_sca_check.fields.keys()).union(core_sca.SCA_CHECK_COMPLIANCE_DB_FIELDS.keys()).union(
             core_sca.SCA_CHECK_RULES_DB_FIELDS.keys()) - {'id_check'}
@@ -170,20 +170,20 @@ def test_WazuhDBQuerySCACheck_parse_select_filter(mock_exists, mock_get_basic_in
 @pytest.mark.parametrize('query', [
     'field~test', ''
 ])
-@patch('wazuh.core.sca.WazuhDBQuerySCA.__init__')
-def test_WazuhDBQuerySCACheckIDs__init__(mock_wdbqsca, query):
-    """Test if method __init__ of WazuhDBQuerySCACheckIDs works properly.
+@patch('som.core.sca.SomDBQuerySCA.__init__')
+def test_SomDBQuerySCACheckIDs__init__(mock_wdbqsca, query):
+    """Test if method __init__ of SomDBQuerySCACheckIDs works properly.
 
     Parameters
     ----------
     query : str
-        Query used to initialize the WazuhDBQuerySCACheckIDs object.
+        Query used to initialize the SomDBQuerySCACheckIDs object.
     """
     expected_fields = core_sca.SCA_CHECK_DB_FIELDS | core_sca.SCA_CHECK_COMPLIANCE_DB_FIELDS | \
                       core_sca.SCA_CHECK_RULES_DB_FIELDS
     expected_fields.pop('id_check')
 
-    core_sca.WazuhDBQuerySCACheckIDs(agent_id='000', offset=10, limit=20, filters={'test': 'value'},
+    core_sca.SomDBQuerySCACheckIDs(agent_id='000', offset=10, limit=20, filters={'test': 'value'},
                                      search={'value': 'test'},
                                      query=query, policy_id='test_policy_id', sort={})
 
@@ -204,11 +204,11 @@ def test_WazuhDBQuerySCACheckIDs__init__(mock_wdbqsca, query):
     ('rationale', 'all', True),
     ('description', 'none', False),
 ])
-@patch('wazuh.core.utils.WazuhDBBackend.__init__', return_value=None)
-@patch('wazuh.core.agent.Agent.get_basic_information')
-def test_WazuhDBQuerySCACheckIDs_protected_pass_filter(mock_get_basic_info, mock_backend, field, value, expected):
-    """Test WazuhDBQuerySCACheckIDs._pass_filter function."""
-    query = core_sca.WazuhDBQuerySCACheckIDs(agent_id='000', offset=10, limit=20, filters={'test': 'value'},
+@patch('som.core.utils.SomDBBackend.__init__', return_value=None)
+@patch('som.core.agent.Agent.get_basic_information')
+def test_SomDBQuerySCACheckIDs_protected_pass_filter(mock_get_basic_info, mock_backend, field, value, expected):
+    """Test SomDBQuerySCACheckIDs._pass_filter function."""
+    query = core_sca.SomDBQuerySCACheckIDs(agent_id='000', offset=10, limit=20, filters={'test': 'value'},
                                      search={'value': 'test'}, query='', policy_id='test_policy_id', sort={})
 
     skipped = query._pass_filter(field, value)
@@ -224,20 +224,20 @@ def test_WazuhDBQuerySCACheckIDs_protected_pass_filter(mock_get_basic_info, mock
 @pytest.mark.parametrize('select', [
     None, ['test']
 ])
-@patch('wazuh.core.sca.WazuhDBQuerySCA.__init__')
-def test_WazuhDBQuerySCACheckRelational__init__(mock_wdbqsca, select, table, sca_checks_test_list):
-    """Test if method __init__ of WazuhDBQuerySCACheckRelational works properly.
+@patch('som.core.sca.SomDBQuerySCA.__init__')
+def test_SomDBQuerySCACheckRelational__init__(mock_wdbqsca, select, table, sca_checks_test_list):
+    """Test if method __init__ of SomDBQuerySCACheckRelational works properly.
 
     Parameters
     ----------
     select : list or None
         Fields to select.
     table : str
-        Table used to initialize the WazuhDBQuerySCACheckRelational object.
+        Table used to initialize the SomDBQuerySCACheckRelational object.
     sca_checks_test_list : list
         List of SCA checks IDs.
     """
-    query_sca_check_relational = core_sca.WazuhDBQuerySCACheckRelational(agent_id='000', table=table,
+    query_sca_check_relational = core_sca.SomDBQuerySCACheckRelational(agent_id='000', table=table,
                                                                          id_check_list=sca_checks_test_list,
                                                                          select=select)
     expected_fields = MappingProxyType({'sca_check_rules': core_sca.SCA_CHECK_RULES_DB_FIELDS,
@@ -257,17 +257,17 @@ def test_WazuhDBQuerySCACheckRelational__init__(mock_wdbqsca, select, table, sca
 @pytest.mark.parametrize('select', [
     ['test'], None
 ])
-@patch('wazuh.core.sca.WazuhDBQuerySCA.__enter__')
-@patch('wazuh.core.sca.WazuhDBQuerySCA.__init__', return_value=None)
-@patch('wazuh.core.sca.WazuhDBQuery.__exit__')
-def test_WazuhDBQueryDistinctSCACheck__init__(mock_exit, mock_wdbqsca, mock_enter, select):
-    """Test if method __init__ of WazuhDBQueryDistinctSCACheck works properly."""
+@patch('som.core.sca.SomDBQuerySCA.__enter__')
+@patch('som.core.sca.SomDBQuerySCA.__init__', return_value=None)
+@patch('som.core.sca.SomDBQuery.__exit__')
+def test_SomDBQueryDistinctSCACheck__init__(mock_exit, mock_wdbqsca, mock_enter, select):
+    """Test if method __init__ of SomDBQueryDistinctSCACheck works properly."""
     mock_enter.return_value.query = "SELECT * FROM sca_check a LEFT JOIN sca_check_compliance b ON a.id=b.id_check LEFT JOIN " \
                                     "sca_check_rules c ON a.id=c.id_check"
     fields = core_sca.SCA_CHECK_DB_FIELDS | core_sca.SCA_CHECK_COMPLIANCE_DB_FIELDS | core_sca.SCA_CHECK_RULES_DB_FIELDS
     fields.pop('id_check')
 
-    core_sca.WazuhDBQueryDistinctSCACheck(agent_id='000', offset=10, limit=20, filters={'test': 'value'},
+    core_sca.SomDBQueryDistinctSCACheck(agent_id='000', offset=10, limit=20, filters={'test': 'value'},
                                           search={'value': 'test'}, query='test~a', policy_id='test_policy_id',
                                           sort={'fields': ['title'], 'order': 'asc'}, select=select)
 
@@ -276,7 +276,7 @@ def test_WazuhDBQueryDistinctSCACheck__init__(mock_exit, mock_wdbqsca, mock_ente
         [call(agent_id='000', offset=0, limit=None, sort={'fields': ['title'], 'order': 'asc'},
               query='policy_id=test_policy_id;test~a', count=False, get_data=False, select=[], default_sort_field='id',
               default_sort_order='ASC', filters={'test': 'value'}, fields=fields,
-              default_query=core_sca.WazuhDBQueryDistinctSCACheck.INNER_QUERY_PATTERN, search={'value': 'test'}),
+              default_query=core_sca.SomDBQueryDistinctSCACheck.INNER_QUERY_PATTERN, search={'value': 'test'}),
          call(ANY, agent_id='000', offset=10, limit=20, sort={'fields': ['title'], 'order': 'asc'}, filters={},
               search={}, count=True, get_data=True, select=select or list(fields.keys()),
               default_query="SELECT DISTINCT {0} FROM " + f"({mock_enter.return_value.query})", fields=fields,

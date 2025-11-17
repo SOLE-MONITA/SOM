@@ -1,6 +1,6 @@
 #!/usr/bin/env python
-# Copyright (C) 2015, Wazuh Inc.
-# Created by Wazuh, Inc. <info@wazuh.com>.
+# Copyright (C) 2015, Som Inc.
+# Created by Som, Inc. <info@som.com>.
 # This program is a free software; you can redistribute it and/or modify it under the terms of GPLv2
 
 import os
@@ -11,10 +11,10 @@ from uuid import uuid4
 import httpx
 import pytest
 
-with patch('wazuh.core.common.wazuh_uid'):
-    with patch('wazuh.core.common.wazuh_gid'):
-        from wazuh.core.manager import *
-        from wazuh.core.exception import WazuhException
+with patch('som.core.common.som_uid'):
+    with patch('som.core.common.som_gid'):
+        from som.core.manager import *
+        from som.core.exception import SomException
 
 test_data_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'data', 'manager')
 ossec_log_path = '{0}/ossec_log.log'.format(test_data_path)
@@ -68,7 +68,7 @@ def get_logs(json_log: bool = False):
     'starting'
 ])
 @patch('os.path.exists')
-@patch('wazuh.core.cluster.utils.glob')
+@patch('som.core.cluster.utils.glob')
 def test_get_status(manager_glob, manager_exists, test_manager, process_status):
     """Tests core.manager.status()
 
@@ -110,7 +110,7 @@ def test_get_ossec_log_fields():
     result = get_ossec_log_fields('2020/07/14 06:10:40 rootcheck: INFO: Ending rootcheck scan.')
     assert isinstance(result, tuple), 'The result is not a tuple'
     assert result[0] == datetime(2020, 7, 14, 6, 10, 40, tzinfo=timezone.utc)
-    assert result[1] == 'wazuh-rootcheck'
+    assert result[1] == 'som-rootcheck'
     assert result[2] == 'info'
     assert result[3] == ' Ending rootcheck scan.'
 
@@ -128,85 +128,85 @@ def test_get_ossec_logs(log_format):
     """Test get_ossec_logs() method returns result with expected information"""
     logs = get_logs(json_log=log_format == LoggingFormat.json).splitlines()
 
-    with patch("wazuh.core.manager.get_wazuh_active_logging_format", return_value=log_format):
-        with pytest.raises(WazuhInternalError, match=".*1020.*"):
+    with patch("som.core.manager.get_som_active_logging_format", return_value=log_format):
+        with pytest.raises(SomInternalError, match=".*1020.*"):
             get_ossec_logs()
 
-        with patch('wazuh.core.manager.exists', return_value=True):
-            with patch('wazuh.core.manager.tail', return_value=logs):
+        with patch('som.core.manager.exists', return_value=True):
+            with patch('som.core.manager.tail', return_value=logs):
                 result = get_ossec_logs()
                 assert all(key in log for key in ('timestamp', 'tag', 'level', 'description') for log in result)
 
 
-@patch("wazuh.core.manager.get_wazuh_active_logging_format", return_value=LoggingFormat.plain)
-@patch('wazuh.core.manager.exists', return_value=True)
+@patch("som.core.manager.get_som_active_logging_format", return_value=LoggingFormat.plain)
+@patch('som.core.manager.exists', return_value=True)
 def test_get_logs_summary(mock_exists, mock_active_logging_format):
     """Test get_logs_summary() method returns result with expected information"""
     logs = get_logs().splitlines()
-    with patch('wazuh.core.manager.tail', return_value=logs):
+    with patch('som.core.manager.tail', return_value=logs):
         result = get_logs_summary()
         assert all(key in log for key in ('all', 'info', 'error', 'critical', 'warning', 'debug')
                    for log in result.values())
-        assert result['wazuh-modulesd:database'] == {'all': 2, 'info': 0, 'error': 0, 'critical': 0, 'warning': 0,
+        assert result['som-modulesd:database'] == {'all': 2, 'info': 0, 'error': 0, 'critical': 0, 'warning': 0,
                                                      'debug': 2}
 
 
-@patch('wazuh.core.manager.exists', return_value=True)
-@patch('wazuh.core.manager.WazuhSocket')
-def test_validate_ossec_conf(mock_wazuhsocket, mock_exists):
+@patch('som.core.manager.exists', return_value=True)
+@patch('som.core.manager.SomSocket')
+def test_validate_ossec_conf(mock_somsocket, mock_exists):
     with patch('socket.socket') as sock:
         # Mock sock response
         json_response = json.dumps({'error': 0, 'message': ""}).encode()
-        mock_wazuhsocket.return_value.receive.return_value = json_response
+        mock_somsocket.return_value.receive.return_value = json_response
         result = validate_ossec_conf()
 
         assert result == {'status': 'OK'}
         mock_exists.assert_called_with(os.path.join(common.WAZUH_PATH, 'queue', 'sockets', 'com'))
 
 
-@patch("wazuh.core.manager.exists", return_value=True)
+@patch("som.core.manager.exists", return_value=True)
 def test_validation_ko(mock_exists):
     # Socket creation raise socket.error
     with patch('socket.socket', side_effect=socket.error):
-        with pytest.raises(WazuhInternalError, match='.* 1013 .*'):
+        with pytest.raises(SomInternalError, match='.* 1013 .*'):
             validate_ossec_conf()
 
     with patch('socket.socket.bind'):
         # Socket connection raise socket.error
         with patch('socket.socket.connect', side_effect=socket.error):
-            with pytest.raises(WazuhInternalError, match='.* 1013 .*'):
+            with pytest.raises(SomInternalError, match='.* 1013 .*'):
                 validate_ossec_conf()
 
         # execq_socket_path not exists
-        with patch("wazuh.core.manager.exists", return_value=False):
-            with pytest.raises(WazuhInternalError, match='.* 1901 .*'):
+        with patch("som.core.manager.exists", return_value=False):
+            with pytest.raises(SomInternalError, match='.* 1901 .*'):
                 validate_ossec_conf()
 
         with patch('socket.socket.connect'):
             # Socket send raise socket.error
-            with patch('wazuh.core.manager.WazuhSocket.send', side_effect=socket.error):
-                with pytest.raises(WazuhInternalError, match='.* 1014 .*'):
+            with patch('som.core.manager.SomSocket.send', side_effect=socket.error):
+                with pytest.raises(SomInternalError, match='.* 1014 .*'):
                     validate_ossec_conf()
 
             with patch('socket.socket.send'):
                 # Socket recv raise socket.error
-                with patch('wazuh.core.manager.WazuhSocket.receive', side_effect=socket.timeout):
-                    with pytest.raises(WazuhInternalError, match='.* 1014 .*'):
+                with patch('som.core.manager.SomSocket.receive', side_effect=socket.timeout):
+                    with pytest.raises(SomInternalError, match='.* 1014 .*'):
                         validate_ossec_conf()
 
                 # _parse_execd_output raise KeyError
-                with patch('wazuh.core.manager.WazuhSocket'):
-                    with patch('wazuh.core.manager.parse_execd_output', side_effect=KeyError):
-                        with pytest.raises(WazuhInternalError, match='.* 1904 .*'):
+                with patch('som.core.manager.SomSocket'):
+                    with patch('som.core.manager.parse_execd_output', side_effect=KeyError):
+                        with pytest.raises(SomInternalError, match='.* 1904 .*'):
                             validate_ossec_conf()
 
 
 @pytest.mark.parametrize('error_flag, error_msg', [
     (0, ""),
-    (1, "2019/02/27 11:30:07 wazuh-clusterd: ERROR: [Cluster] [Main] Error 3004 - Error in cluster configuration: "
+    (1, "2019/02/27 11:30:07 som-clusterd: ERROR: [Cluster] [Main] Error 3004 - Error in cluster configuration: "
         "Unspecified key"),
-    (1, "2019/02/27 11:30:24 wazuh-authd: ERROR: (1230): Invalid element in the configuration: "
-        "'use_source_i'.\n2019/02/27 11:30:24 wazuh-authd: ERROR: (1202): Configuration error at "
+    (1, "2019/02/27 11:30:24 som-authd: ERROR: (1230): Invalid element in the configuration: "
+        "'use_source_i'.\n2019/02/27 11:30:24 som-authd: ERROR: (1202): Configuration error at "
         "'/var/ossec/etc/ossec.conf'.")
 ])
 def test_parse_execd_output(error_flag, error_msg):
@@ -224,11 +224,11 @@ def test_parse_execd_output(error_flag, error_msg):
         result = parse_execd_output(json_response)
         assert result['status'] == 'OK'
     else:
-        with pytest.raises(WazuhException, match=f'.* 1908 .*'):
+        with pytest.raises(SomException, match=f'.* 1908 .*'):
             parse_execd_output(json_response)
 
 
-@patch('wazuh.core.manager.configuration.api_conf', new={'experimental_features': True})
+@patch('som.core.manager.configuration.api_conf', new={'experimental_features': True})
 def test_get_api_config():
     """Checks that get_api_config method is returning current api_conf dict."""
     result = get_api_conf()
@@ -249,7 +249,7 @@ def test_get_update_information_template(last_check_date, update_check, installa
     assert 'update_check' in template
     assert template['update_check'] == update_check
     assert 'current_version' in template
-    assert template['current_version'] == f"v{wazuh.__version__}"
+    assert template['current_version'] == f"v{som.__version__}"
     assert 'last_available_major' in template
     assert 'last_available_minor' in template
     assert 'last_available_patch' in template
@@ -302,7 +302,7 @@ async def test_query_update_check_service_returns_correct_data_when_status_200(
                 {
                     'tag': f'v{semver}',
                     'description': 'Some description',
-                    'title': f'Wazuh {semver}',
+                    'title': f'Som {semver}',
                     'published_date': '2023-09-22T10:44:00Z',
                     'semver': {'minor': minor, 'patch': patch, 'major': major},
                 }
@@ -378,7 +378,7 @@ async def test_query_update_check_service_request(
     """Test that query_update_check_service function make request to the URL with the correct headers."""
 
     version = '4.8.0'
-    with patch('framework.wazuh.core.manager.wazuh.__version__', version):
+    with patch('framework.som.core.manager.som.__version__', version):
         await query_update_check_service(installation_uid)
 
         client_session_get_mock.assert_called()
@@ -388,7 +388,7 @@ async def test_query_update_check_service_request(
             headers={
                 WAZUH_UID_KEY: installation_uid,
                 WAZUH_TAG_KEY: f'v{version}',
-                USER_AGENT_KEY: f'Wazuh UpdateCheckService/v{version}'
+                USER_AGENT_KEY: f'Som UpdateCheckService/v{version}'
             },
             follow_redirects=True
         )

@@ -1,5 +1,5 @@
-# Copyright (C) 2015, Wazuh Inc.
-# Created by Wazuh, Inc. <info@wazuh.com>.
+# Copyright (C) 2015, Som Inc.
+# Created by Som, Inc. <info@som.com>.
 # This program is free software; you can redistribute it and/or modify it under the terms of GPLv2
 
 import calendar
@@ -13,9 +13,9 @@ from unittest.mock import patch, PropertyMock
 
 import pytest
 
-with patch('wazuh.core.common.wazuh_uid'):
-    with patch('wazuh.core.common.wazuh_gid'):
-        from wazuh.core import wlogging
+with patch('som.core.common.som_uid'):
+    with patch('som.core.common.som_gid'):
+        from som.core import wlogging
 
 
 def test_timebasedfilerotatinghandler_dorollover():
@@ -38,7 +38,7 @@ def test_timebasedfilerotatinghandler_dorollover():
 
 
 @pytest.mark.parametrize('rotated_file', ['test.log.2021-08-03', 'test.log.2019-07-04'])
-@patch('wazuh.core.utils.mkdir_with_mode')
+@patch('som.core.utils.mkdir_with_mode')
 def test_timebasedfilerotatinghandler_compute_log_directory(mock_mkdir, rotated_file):
     """Test if method compute_log_directory of TimeBasedFileRotatingHandler works properly.
 
@@ -85,7 +85,7 @@ def test_sizebasedfilerotatinghandler_dorollover():
             assert backup.read().decode() == test_str
 
 
-@patch('wazuh.core.utils.mkdir_with_mode')
+@patch('som.core.utils.mkdir_with_mode')
 def test_sizebasedfilerotatinghandler_compute_log_directory(mock_mkdir):
     """Test if method compute_log_directory of SizeBasedFileRotatingHandler works properly."""
     previous_rotated_logs = randint(2, 15)
@@ -117,7 +117,7 @@ def test_sizebasedfilerotatinghandler_compute_log_directory(mock_mkdir):
         mock_mkdir.assert_called_with(log_path, 0o750)
 
         # Expect the 4th rotated log
-        with patch("wazuh.core.wlogging.os.path.exists", new=_mock_exists):
+        with patch("som.core.wlogging.os.path.exists", new=_mock_exists):
             expected_name = join(log_path, f"test.log-{int(day):02d}_{previous_rotated_logs + 1}.gz")
             computed_name = fh.compute_log_directory()
 
@@ -128,11 +128,11 @@ def test_sizebasedfilerotatinghandler_compute_log_directory(mock_mkdir):
 @pytest.mark.parametrize('max_size', [0, 500])
 @patch('logging.addLevelName')
 @patch('logging.Logger.addHandler')
-@patch('wazuh.core.wlogging.SizeBasedFileRotatingHandler')
-@patch('wazuh.core.wlogging.TimeBasedFileRotatingHandler')
-def test_wazuh_logger_setup_logger(mock_time_handler, mock_size_handler, mock_add_handler, mock_add_level_name,
+@patch('som.core.wlogging.SizeBasedFileRotatingHandler')
+@patch('som.core.wlogging.TimeBasedFileRotatingHandler')
+def test_som_logger_setup_logger(mock_time_handler, mock_size_handler, mock_add_handler, mock_add_level_name,
                                    max_size):
-    """Test if method setup_logger of WazuhLogger setups the logger attribute properly.
+    """Test if method setup_logger of SomLogger setups the logger attribute properly.
 
     Parameters
     ----------
@@ -140,10 +140,10 @@ def test_wazuh_logger_setup_logger(mock_time_handler, mock_size_handler, mock_ad
         `max_size` input value.
     """
     tmp_dir = tempfile.TemporaryDirectory()
-    # To bypass the checking of the existence of a valid Wazuh install
+    # To bypass the checking of the existence of a valid Som install
     # Check time handler
     with patch('os.path.join', return_value=tmp_dir.name):
-        w_logger = wlogging.WazuhLogger(foreground_mode=True, log_path=tmp_dir.name,
+        w_logger = wlogging.SomLogger(foreground_mode=True, log_path=tmp_dir.name,
                                         tag='%(test)s %(test)s: %(test)s',
                                         debug_level=[0, 'test'], max_size=max_size)
     w_logger.setup_logger()
@@ -158,21 +158,21 @@ def test_wazuh_logger_setup_logger(mock_time_handler, mock_size_handler, mock_ad
     mock_add_level_name.assert_called()
 
 
-@patch.object(wlogging.WazuhLogger, 'log_path', create=True, new_callable=PropertyMock)
-@patch.object(wlogging.WazuhLogger, 'tag', create=True, new_callable=PropertyMock)
-@patch.object(wlogging.WazuhLogger, 'logger', create=True, new_callable=PropertyMock)
-@patch.object(wlogging.WazuhLogger, 'foreground_mode', create=True, new_callable=PropertyMock)
-@patch.object(wlogging.WazuhLogger, 'debug_level', create=True, new_callable=PropertyMock)
-@patch.object(wlogging.WazuhLogger, 'logger_name', create=True, new_callable=PropertyMock)
-@patch.object(wlogging.WazuhLogger, 'custom_formatter', create=True, new_callable=PropertyMock)
-@patch.object(wlogging.WazuhLogger, 'max_size', create=True, new_callable=PropertyMock)
+@patch.object(wlogging.SomLogger, 'log_path', create=True, new_callable=PropertyMock)
+@patch.object(wlogging.SomLogger, 'tag', create=True, new_callable=PropertyMock)
+@patch.object(wlogging.SomLogger, 'logger', create=True, new_callable=PropertyMock)
+@patch.object(wlogging.SomLogger, 'foreground_mode', create=True, new_callable=PropertyMock)
+@patch.object(wlogging.SomLogger, 'debug_level', create=True, new_callable=PropertyMock)
+@patch.object(wlogging.SomLogger, 'logger_name', create=True, new_callable=PropertyMock)
+@patch.object(wlogging.SomLogger, 'custom_formatter', create=True, new_callable=PropertyMock)
+@patch.object(wlogging.SomLogger, 'max_size', create=True, new_callable=PropertyMock)
 @patch('logging.Formatter')
-def test_wazuh_logger__init__(mock_lformatter, mock_max_size, mock_formatter, mock_logger_name, mock_debug_level,
+def test_som_logger__init__(mock_lformatter, mock_max_size, mock_formatter, mock_logger_name, mock_debug_level,
                               mock_foreground_mode, mock_logger, mock_tag, mock_log_path):
-    """Test if WazuhLogger __init__ method initialize all attributes properly."""
-    # To bypass the checking of the existence of a valid Wazuh install
+    """Test if SomLogger __init__ method initialize all attributes properly."""
+    # To bypass the checking of the existence of a valid Som install
     with patch('os.path.join'):
-        wlogging.WazuhLogger(foreground_mode=mock_foreground_mode, log_path=mock_log_path, tag=mock_tag,
+        wlogging.SomLogger(foreground_mode=mock_foreground_mode, log_path=mock_log_path, tag=mock_tag,
                              debug_level=mock_debug_level, logger_name=mock_logger_name,
                              custom_formatter=mock_formatter, max_size=mock_max_size)
     for x in [mock_formatter, mock_logger_name, mock_debug_level, mock_foreground_mode,
@@ -185,14 +185,14 @@ def test_wazuh_logger__init__(mock_lformatter, mock_max_size, mock_formatter, mo
     ('foreground_mode', None, True),
     ('doesnt_exists', AttributeError, None)
 ])
-@patch('wazuh.core.wlogging.SizeBasedFileRotatingHandler')
-@patch('wazuh.core.wlogging.TimeBasedFileRotatingHandler')
-def test_wazuh_logger_getattr(mock_time_handler, mock_size_handler, attribute, expected_exception, expected_value):
-    """Test if WazuhLogger __getattr__ method works properly."""
+@patch('som.core.wlogging.SizeBasedFileRotatingHandler')
+@patch('som.core.wlogging.TimeBasedFileRotatingHandler')
+def test_som_logger_getattr(mock_time_handler, mock_size_handler, attribute, expected_exception, expected_value):
+    """Test if SomLogger __getattr__ method works properly."""
     tmp_dir = tempfile.TemporaryDirectory()
-    # To bypass the checking of the existence of a valid Wazuh install
+    # To bypass the checking of the existence of a valid Som install
     with patch('os.path.join'):
-        w_logger = wlogging.WazuhLogger(foreground_mode=True, log_path=tmp_dir.name, tag='%(test)s %(test)s: %(test)s',
+        w_logger = wlogging.SomLogger(foreground_mode=True, log_path=tmp_dir.name, tag='%(test)s %(test)s: %(test)s',
                                         debug_level=[0, 'test'], logger_name='test')
     w_logger.setup_logger()
 

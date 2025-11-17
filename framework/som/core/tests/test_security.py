@@ -1,5 +1,5 @@
-# Copyright (C) 2015, Wazuh Inc.
-# Created by Wazuh, Inc. <info@wazuh.com>.
+# Copyright (C) 2015, Som Inc.
+# Created by Som, Inc. <info@som.com>.
 # This program is free software; you can redistribute it and/or modify it under the terms of GPLv2
 
 from contextvars import ContextVar
@@ -7,7 +7,7 @@ from unittest.mock import patch
 
 import pytest
 
-from wazuh.tests.test_security import db_setup  # noqa
+from som.tests.test_security import db_setup  # noqa
 
 
 @patch('yaml.safe_load')
@@ -31,19 +31,19 @@ def test_load_spec(mock_safe_load, db_setup):
 
 
 def test_revoke_tokens(db_setup):
-    """Checks that the return value of revoke_tokens is a WazuhResult.
+    """Checks that the return value of revoke_tokens is a SomResult.
 
     Parameters
     ----------
     db_setup: callable
         This function creates the rbac.db file.
     """
-    with patch('wazuh.core.security.change_keypair', side_effect=None):
-        security, WazuhResult, _ = db_setup
-        mock_current_user = ContextVar('current_user', default='wazuh')
-        with patch("wazuh.sca.common.current_user", new=mock_current_user):
+    with patch('som.core.security.change_keypair', side_effect=None):
+        security, SomResult, _ = db_setup
+        mock_current_user = ContextVar('current_user', default='som')
+        with patch("som.sca.common.current_user", new=mock_current_user):
             result = security.revoke_current_user_tokens()
-            assert isinstance(result, WazuhResult)
+            assert isinstance(result, SomResult)
 
 
 @pytest.mark.parametrize('role_list, expected_roles', [
@@ -63,13 +63,13 @@ def test_invalid_roles_tokens(db_setup, role_list, expected_roles):
     expected_roles : set
         Expected roles.
     """
-    with patch('wazuh.core.security.TokenManager.add_user_roles_rules') as TM_mock:
+    with patch('som.core.security.TokenManager.add_user_roles_rules') as TM_mock:
         _, _, core_security = db_setup
         core_security.invalid_roles_tokens(roles=[role_id for role_id in role_list])
         assert set(TM_mock.call_args.kwargs['roles']) == expected_roles
 
 
-@patch('wazuh.core.security.TokenManager.add_user_roles_rules')
+@patch('som.core.security.TokenManager.add_user_roles_rules')
 def test_invalid_run_as_tokens(mock_add_user_roles_rules, db_setup):
     """Check that TokenManager's add_user_roles_rules method is called with the expected parameters.
 
@@ -122,16 +122,16 @@ def test_invalid_users_tokens(db_setup, user_list, expected_users):
     expected_users : set
         Expected users.
     """
-    with patch('wazuh.core.security.TokenManager.add_user_roles_rules') as TM_mock:
+    with patch('som.core.security.TokenManager.add_user_roles_rules') as TM_mock:
         _, _, core_security = db_setup
         core_security.invalid_users_tokens(users=[user_id for user_id in user_list])
         related_users = TM_mock.call_args.kwargs['users']
         assert set(related_users) == expected_users
 
 
-@patch("wazuh.core.security.revoke_tokens")
-@patch("wazuh.core.security.check_database_integrity")
-@patch("wazuh.core.security.os.remove")
+@patch("som.core.security.revoke_tokens")
+@patch("som.core.security.check_database_integrity")
+@patch("som.core.security.os.remove")
 def test_rbac_db_factory_reset(remove_mock, db_integrity_mock, revoke_mock, db_setup):
     """Check that the RBAC database factory reset is correct."""
     _, _, core_security = db_setup

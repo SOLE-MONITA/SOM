@@ -1,10 +1,10 @@
-# Copyright (C) 2015, Wazuh Inc.
-# Created by Wazuh, Inc. <info@wazuh.com>.
+# Copyright (C) 2015, Som Inc.
+# Created by Som, Inc. <info@som.com>.
 # This program is a free software; you can redistribute it and/or modify it under the terms of GPLv2
 
 from unittest import TestCase
 
-from wazuh.core.InputValidator import InputValidator
+from som.core.InputValidator import InputValidator
 import operator
 
 

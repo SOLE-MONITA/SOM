@@ -1,5 +1,5 @@
-# Copyright (C) 2015, Wazuh Inc.
-# Created by Wazuh, Inc. <info@wazuh.com>.
+# Copyright (C) 2015, Som Inc.
+# Created by Som, Inc. <info@som.com>.
 # This program is free software; you can redistribute it and/or modify it under the terms of GPLv2
 
 import asyncio  # noqa
@@ -8,10 +8,10 @@ from unittest.mock import patch, AsyncMock, MagicMock, call
 
 import pytest
 
-from wazuh.core import common
-from wazuh.core import exception
-from wazuh.core.common import MAX_SOCKET_BUFFER_SIZE
-from wazuh.core.wdb import AsyncWazuhDBConnection, WazuhDBConnection
+from som.core import common
+from som.core import exception
+from som.core.common import MAX_SOCKET_BUFFER_SIZE
+from som.core.wdb import AsyncSomDBConnection, SomDBConnection
 
 
 def format_msg(msg):
@@ -19,8 +19,8 @@ def format_msg(msg):
 
 
 def test_async_init():
-    """Verify that AsyncWazuhDBConnection attributes are correct."""
-    async_wdb = AsyncWazuhDBConnection('test')
+    """Verify that AsyncSomDBConnection attributes are correct."""
+    async_wdb = AsyncSomDBConnection('test')
     assert async_wdb.socket_path == common.WDB_SOCKET
     assert async_wdb.loop == 'test'
     assert async_wdb._reader is None
@@ -31,7 +31,7 @@ def test_async_init():
 @patch('asyncio.open_unix_connection', return_value=[AsyncMock(), MagicMock()])
 async def test_async_open_connection(open_unix_connection_mock):
     """Verify that open_unix_connection is called with expected parameters."""
-    async_wdb = AsyncWazuhDBConnection(loop='test_loop')
+    async_wdb = AsyncSomDBConnection(loop='test_loop')
     await async_wdb.open_connection()
     assert async_wdb._reader is not None
     assert async_wdb._writer is not None
@@ -40,7 +40,7 @@ async def test_async_open_connection(open_unix_connection_mock):
 
 def test_async_close():
     """Check whether stream close method is called."""
-    async_wdb = AsyncWazuhDBConnection()
+    async_wdb = AsyncSomDBConnection()
     async_wdb._writer = MagicMock()
     async_wdb.close()
     async_wdb._writer.close.assert_called_once_with()
@@ -55,7 +55,7 @@ async def test_async_send(raw, expected_response):
     """Assert that expected response is returned and methods are called with expected parameters."""
     msg = 'test message'
     encoded_response = 'ok {"test": "test response"}'.encode(encoding='utf-8')
-    async_wdb = AsyncWazuhDBConnection()
+    async_wdb = AsyncSomDBConnection()
     async_wdb._reader = AsyncMock()
     async_wdb._reader.readexactly.side_effect = [struct.pack('<I', len(encoded_response)), encoded_response]
     async_wdb._writer = MagicMock()
@@ -73,10 +73,10 @@ async def test_async_send(raw, expected_response):
 @pytest.mark.asyncio
 async def test_async_send_ko():
     """Verify that expected exception codes are raised."""
-    async_wdb = AsyncWazuhDBConnection()
+    async_wdb = AsyncSomDBConnection()
 
     # Reader and writer are None.
-    with pytest.raises(exception.WazuhInternalError, match=".* 2005 .*"):
+    with pytest.raises(exception.SomInternalError, match=".* 2005 .*"):
         await async_wdb._send('test')
 
     # EOF reached before n can be read.
@@ -84,24 +84,24 @@ async def test_async_send_ko():
     async_wdb._writer.drain = AsyncMock()
     async_wdb._reader = AsyncMock()
     async_wdb._reader.readexactly.side_effect = lambda x: exec('raise(asyncio.IncompleteReadError("test", 5))')
-    with pytest.raises(exception.WazuhInternalError, match=r'\b2010\b'):
+    with pytest.raises(exception.SomInternalError, match=r'\b2010\b'):
         await async_wdb._send('test')
 
-    # Wazuh-db error response.
+    # Som-db error response.
     encoded_response = 'err Error message'.encode(encoding='utf-8')
     async_wdb._reader.readexactly.side_effect = [struct.pack('<I', len(encoded_response)), encoded_response]
-    with pytest.raises(exception.WazuhError, match=r'\b2003\b'):
+    with pytest.raises(exception.SomError, match=r'\b2003\b'):
         await async_wdb._send('test')
 
 
 @pytest.mark.asyncio
 async def test_run_wdb_command():
-    """Test `WazuhDBConnection.run_wdb_command` method."""
+    """Test `SomDBConnection.run_wdb_command` method."""
     send_result = ('status', '["data"]')
     command = "any wdb command"
 
-    wdb_con = AsyncWazuhDBConnection()
-    with patch('wazuh.core.wdb.AsyncWazuhDBConnection._send', return_value=send_result) as wdb_send_mock:
+    wdb_con = AsyncSomDBConnection()
+    with patch('som.core.wdb.AsyncSomDBConnection._send', return_value=send_result) as wdb_send_mock:
         result = await wdb_con.run_wdb_command(command)
         wdb_send_mock.assert_called_once_with(command, raw=True)
 
@@ -114,10 +114,10 @@ async def test_run_wdb_command():
     ('err', )
 ])
 async def test_run_wdb_command_ko(wdb_response):
-    """Test `WazuhDBConnection.run_wdb_command` method expected exceptions."""
-    with patch('wazuh.core.wdb.AsyncWazuhDBConnection._send', return_value=wdb_response):
-        wdb_con = AsyncWazuhDBConnection()
-        with pytest.raises(exception.WazuhInternalError, match=".* 2007 .*") as expected_exc:
+    """Test `SomDBConnection.run_wdb_command` method expected exceptions."""
+    with patch('som.core.wdb.AsyncSomDBConnection._send', return_value=wdb_response):
+        wdb_con = AsyncSomDBConnection()
+        with pytest.raises(exception.SomInternalError, match=".* 2007 .*") as expected_exc:
             await wdb_con.run_wdb_command("global sync-agent-info-get ")
 
         if len(wdb_response) > 1:
@@ -129,28 +129,28 @@ def test_failed_connection():
     Tests an exception is properly raised when it's not possible to connect to wdb
     """
     # tests the socket path doesn't exists
-    with patch('wazuh.core.common.WDB_SOCKET', '/this/path/doesnt/exist'):
-        with pytest.raises(exception.WazuhException, match=".* 2005 .*"):
-            WazuhDBConnection()
+    with patch('som.core.common.WDB_SOCKET', '/this/path/doesnt/exist'):
+        with pytest.raises(exception.SomException, match=".* 2005 .*"):
+            SomDBConnection()
     # tests an exception is properly raised when a connection error is raised
     with patch('socket.socket') as socket_patch:
-        with pytest.raises(exception.WazuhException, match=".* 2005 .*"):
+        with pytest.raises(exception.SomException, match=".* 2005 .*"):
             socket_patch.return_value.connect.side_effect = ConnectionError
-            WazuhDBConnection()
+            SomDBConnection()
 
 
 @patch("socket.socket.connect")
 @patch("socket.socket.send")
 def test_wrong_character_encodings_wdb(send_mock, connect_mock):
     """
-    Tests receiving a text with a bad character encoding from wazuh db
+    Tests receiving a text with a bad character encoding from som db
     """
     def recv_mock(size_to_receive):
         bad_string = b' {"bad": "\x96bad"}'
         return format_msg(bad_string) if size_to_receive == 4 else bad_string
 
     with patch('socket.socket.recv', side_effect=recv_mock):
-        mywdb = WazuhDBConnection()
+        mywdb = SomDBConnection()
         received = mywdb._send("test")
         assert received == {"bad": "bad"}
 
@@ -166,7 +166,7 @@ def test_null_values_are_removed(send_mock, connect_mock):
         return format_msg(nulls_string) if size_to_receive == 4 else nulls_string
 
     with patch('socket.socket.recv', side_effect=recv_mock):
-        mywdb = WazuhDBConnection()
+        mywdb = SomDBConnection()
         received = mywdb._send("test")
         assert received == [{"a": "a", "c": [1, 2, 3], "d": {}}]
 
@@ -182,13 +182,13 @@ def test_failed_send_private(send_mock, connect_mock):
         return format_msg(error_string) if size_to_receive == 4 else error_string
 
     with patch('socket.socket.recv', side_effect=recv_mock):
-        mywdb = WazuhDBConnection()
-        with pytest.raises(exception.WazuhException, match=".* 2003 .*"):
+        mywdb = SomDBConnection()
+        with pytest.raises(exception.SomException, match=".* 2003 .*"):
             mywdb._send('test_msg')
 
     with patch('socket.socket.recv', return_value=b'a' * (MAX_SOCKET_BUFFER_SIZE + 1)):
-        mywdb = WazuhDBConnection()
-        with pytest.raises(exception.WazuhException, match=".* 2009 .*"):
+        mywdb = SomDBConnection()
+        with pytest.raises(exception.SomException, match=".* 2009 .*"):
             mywdb._send('test_msg')
 
 
@@ -208,7 +208,7 @@ def test_remove_agents_database(send_mock, connect_mock, content):
         return format_msg(content) if size_to_receive == 4 else content
 
     with patch('socket.socket.recv', side_effect=recv_mock):
-        mywdb = WazuhDBConnection()
+        mywdb = SomDBConnection()
         received = mywdb.delete_agents_db(['001', '002'])
         assert(isinstance(received, dict))
         assert("agents" in received)
@@ -224,30 +224,30 @@ def test_remove_agents_database(send_mock, connect_mock, content):
 @patch("socket.socket.connect")
 @patch("socket.socket.send")
 def test_query_input_validation_private(send_mock, connect_mock, error_query):
-    mywdb = WazuhDBConnection()
-    with pytest.raises(exception.WazuhException, match=".* 2004 .*"):
+    mywdb = SomDBConnection()
+    with pytest.raises(exception.SomException, match=".* 2004 .*"):
         mywdb.execute(error_query)
 
 
 @patch("socket.socket.connect")
 @patch("socket.socket.send")
 def test_query_lower_private(send_mock, connect_mock):
-    mywdb = WazuhDBConnection()
-    with pytest.raises(exception.WazuhException, match=".* 2004 .*"):
+    mywdb = SomDBConnection()
+    with pytest.raises(exception.SomException, match=".* 2004 .*"):
         mywdb.execute("Agent sql select 'test'")
 
 
 @patch("socket.socket.connect")
 @patch("socket.socket.send")
-@patch("wazuh.core.wdb.WazuhDBConnection._send")
+@patch("som.core.wdb.SomDBConnection._send")
 def test_execute(send_mock, socket_send_mock, connect_mock):
     def send_mock(obj, msg, raw=False):
         return ['ok', '{"total": 5}'] if raw else [{"total": 5}]
 
-    mywdb = WazuhDBConnection()
+    mywdb = SomDBConnection()
     mywdb.execute('agent 000 sql delete from test', delete=True)
     mywdb.execute("agent 000 sql update test set value = 'test' where key = 'test'", update=True)
-    with patch("wazuh.core.wdb.WazuhDBConnection._send", new=send_mock):
+    with patch("som.core.wdb.SomDBConnection._send", new=send_mock):
         mywdb.execute("agent 000 sql select test from test offset 1 limit 1")
         mywdb.execute("agent 000 sql select test from test offset 1 limit 1", count=True)
         mywdb.execute("agent 000 sql select test from test offset 1 count")
@@ -256,18 +256,18 @@ def test_execute(send_mock, socket_send_mock, connect_mock):
 @patch("socket.socket.connect")
 @patch("socket.socket.send")
 def test_execute_pagination(socket_send_mock, connect_mock):
-    mywdb = WazuhDBConnection()
+    mywdb = SomDBConnection()
 
     # Test pagination
-    with patch("wazuh.core.wdb.WazuhDBConnection._send",
-               side_effect=[[{'total': 5}], exception.WazuhInternalError(2009), ['ok', '{"total": 5}'],
+    with patch("som.core.wdb.SomDBConnection._send",
+               side_effect=[[{'total': 5}], exception.SomInternalError(2009), ['ok', '{"total": 5}'],
                             ['ok', '{"total": 5}']]):
         mywdb.execute("agent 000 sql select test from test offset 1 limit 500")
 
     # Test pagination error
-    with patch("wazuh.core.wdb.WazuhDBConnection._send",
-               side_effect=[[{'total': 5}], exception.WazuhInternalError(2009)]):
-        with pytest.raises(exception.WazuhInternalError, match=".* 2009 .*"):
+    with patch("som.core.wdb.SomDBConnection._send",
+               side_effect=[[{'total': 5}], exception.SomInternalError(2009)]):
+        with pytest.raises(exception.SomInternalError, match=".* 2009 .*"):
             mywdb.execute("agent 000 sql select test from test offset 1 limit 1")
 
 
@@ -280,14 +280,14 @@ def test_execute_pagination(socket_send_mock, connect_mock):
 @patch("socket.socket.connect")
 @patch("socket.socket.send")
 def test_failed_execute(send_mock, connect_mock, error_query, error_type, expected_exception, delete, update):
-    mywdb = WazuhDBConnection()
+    mywdb = SomDBConnection()
     if not error_type:
-        with pytest.raises(exception.WazuhException, match=f'.* {expected_exception} .*'):
+        with pytest.raises(exception.SomException, match=f'.* {expected_exception} .*'):
             mywdb.execute(error_query, delete=delete, update=update)
     else:
-        with patch("wazuh.core.wdb.WazuhDBConnection._send", return_value=[{'total': 5}]):
-            with patch("wazuh.core.wdb.min", side_effect=error_type):
-                with pytest.raises(exception.WazuhException, match=f'.* {expected_exception} .*'):
+        with patch("som.core.wdb.SomDBConnection._send", return_value=[{'total': 5}]):
+            with patch("som.core.wdb.min", side_effect=error_type):
+                with pytest.raises(exception.SomException, match=f'.* {expected_exception} .*'):
                     mywdb.execute(error_query, delete=delete, update=update)
 
 
@@ -295,8 +295,8 @@ def test_failed_execute(send_mock, connect_mock, error_query, error_type, expect
     '[{"key1": "value1"}]',
     '[{"key1": "value1"}, {"invalid": "(null)"}]',
 ])
-def test_WazuhDBConnection_loads(string):
-    """Test that the `loads` method from the class `WazuhDBConnection` cleans empty objects from the result."""
-    result = WazuhDBConnection.loads(string)
+def test_SomDBConnection_loads(string):
+    """Test that the `loads` method from the class `SomDBConnection` cleans empty objects from the result."""
+    result = SomDBConnection.loads(string)
     assert len(result) == 1
     assert result[0] == {"key1": "value1"}

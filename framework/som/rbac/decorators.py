@@ -1,5 +1,5 @@
-# Copyright (C) 2015, Wazuh Inc.
-# Created by Wazuh, Inc. <info@wazuh.com>.
+# Copyright (C) 2015, Som Inc.
+# Created by Som, Inc. <info@som.com>.
 # This program is a free software; you can redistribute it and/or modify it under the terms of GPLv2
 
 import asyncio
@@ -7,12 +7,12 @@ import re
 from collections import defaultdict
 from functools import wraps
 
-from wazuh.core.agent import get_agents_info, get_groups, expand_group
-from wazuh.core.common import rbac, broadcast, cluster_nodes
-from wazuh.core.exception import WazuhPermissionError
-from wazuh.core.results import AffectedItemsWazuhResult
-from wazuh.rbac.utils import expand_rules, expand_lists, expand_decoders
-from wazuh.rbac.orm import RolesManager, PoliciesManager, AuthenticationManager, RulesManager
+from som.core.agent import get_agents_info, get_groups, expand_group
+from som.core.common import rbac, broadcast, cluster_nodes
+from som.core.exception import SomPermissionError
+from som.core.results import AffectedItemsSomResult
+from som.rbac.utils import expand_rules, expand_lists, expand_decoders
+from som.rbac.orm import RolesManager, PoliciesManager, AuthenticationManager, RulesManager
 
 SENSITIVE_FIELD_PATHS = ("authd.pass",)
 
@@ -385,13 +385,13 @@ async def async_list_handler(result: asyncio.coroutine, **kwargs):
     return list_handler(result, **kwargs)
 
 
-def list_handler(result: AffectedItemsWazuhResult, original: dict = None, allowed: dict = None, target: dict = None,
-                 add_denied: bool = False, **post_proc_kwargs: dict) -> AffectedItemsWazuhResult:
+def list_handler(result: AffectedItemsSomResult, original: dict = None, allowed: dict = None, target: dict = None,
+                 add_denied: bool = False, **post_proc_kwargs: dict) -> AffectedItemsSomResult:
     """Post processor for framework list responses with affected items and optional denied items.
 
     Parameters
     ----------
-    result : AffectedItemsWazuhResult
+    result : AffectedItemsSomResult
         Dict with affected_items, failed_items and str_priority.
     original : dict
         Original input call parameter values.
@@ -406,7 +406,7 @@ def list_handler(result: AffectedItemsWazuhResult, original: dict = None, allowe
 
     Returns
     -------
-    AffectedItemsWazuhResult
+    AffectedItemsSomResult
         Framework responses.
     """
     if add_denied:
@@ -416,13 +416,13 @@ def list_handler(result: AffectedItemsWazuhResult, original: dict = None, allowe
                 denied = {int(i) if i.isdigit() else i for i in denied}
             for denied_item in denied:
                 result.add_failed_item(id_=denied_item,
-                                       error=WazuhPermissionError(4000, extra_message=f'Resource type: {res_id}',
+                                       error=SomPermissionError(4000, extra_message=f'Resource type: {res_id}',
                                                                   ids=denied))
     if not add_denied or post_proc_kwargs.get('force'):
         # Apply post processing exclusion/default values if the main resource was not explicit or
         # `force` parameter exists in `post_proc_kwargs` and is True
         if 'default_result_kwargs' in post_proc_kwargs and result is None:
-            return AffectedItemsWazuhResult(**post_proc_kwargs['default_result_kwargs'])
+            return AffectedItemsSomResult(**post_proc_kwargs['default_result_kwargs'])
         if 'exclude_codes' in post_proc_kwargs:
             result.remove_failed_items(post_proc_kwargs['exclude_codes'])
 
@@ -431,7 +431,7 @@ def list_handler(result: AffectedItemsWazuhResult, original: dict = None, allowe
 
 def expose_resources(actions: list = None, resources: list = None, post_proc_func: callable = list_handler,
                      post_proc_kwargs: dict = None):
-    """Decorator to apply user permissions on a Wazuh framework function based on exposed action:resource pairs.
+    """Decorator to apply user permissions on a Som framework function based on exposed action:resource pairs.
 
     Parameters
     ----------
@@ -483,7 +483,7 @@ def expose_resources(actions: list = None, resources: list = None, post_proc_fun
                         denied = _get_denied(original_kwargs, allow, target_param, res_id, resources=resources)
                         if res_id in integer_resources:
                             denied = {int(i) if i.isdigit() else i for i in denied}
-                        raise WazuhPermissionError(4000,
+                        raise SomPermissionError(4000,
                                                    extra_message=f'Resource type: {res_id}',
                                                    ids=denied, title="Permission Denied")
                     else:
@@ -496,7 +496,7 @@ def expose_resources(actions: list = None, resources: list = None, post_proc_fun
             if hasattr(func, '__wrapped__') or kwargs.pop('call_func', True):
                 result = func(*args, **kwargs) if not skip_execution else None
             else:
-                result = AffectedItemsWazuhResult()
+                result = AffectedItemsSomResult()
 
             if post_proc_func is None:
                 return result
@@ -562,11 +562,11 @@ def _mask_payload(payload, mask_text: str = MASK_DEFAULT) -> None:
     Parameters
     ----------
     payload :
-        One of: dict, list, or AffectedItemsWazuhResult. Other types are ignored.
+        One of: dict, list, or AffectedItemsSomResult. Other types are ignored.
     mask_text : str
         Replacement text used for masked values.
     """
-    if isinstance(payload, AffectedItemsWazuhResult):
+    if isinstance(payload, AffectedItemsSomResult):
         for item in payload.affected_items:
             _mask_payload(item, mask_text)
         return

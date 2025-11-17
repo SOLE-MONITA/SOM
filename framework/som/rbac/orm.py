@@ -1,5 +1,5 @@
-# Copyright (C) 2015, Wazuh Inc.
-# Created by Wazuh, Inc. <info@wazuh.com>.
+# Copyright (C) 2015, Som Inc.
+# Created by Som, Inc. <info@som.com>.
 # This program is a free software; you can redistribute it and/or modify it under the terms of GPLv2
 
 import json
@@ -27,11 +27,11 @@ from werkzeug.security import check_password_hash, generate_password_hash
 
 from api.configuration import security_conf
 from api.constants import SECURITY_PATH
-from wazuh.core.common import wazuh_uid, wazuh_gid, DEFAULT_RBAC_RESOURCES
-from wazuh.core.utils import get_utc_now, safe_move
-from wazuh.rbac.utils import clear_tokens_cache
+from som.core.common import som_uid, som_gid, DEFAULT_RBAC_RESOURCES
+from som.core.utils import get_utc_now, safe_move
+from som.rbac.utils import clear_tokens_cache
 
-logger = logging.getLogger("wazuh-api")
+logger = logging.getLogger("som-api")
 
 # Max reserved ID value
 WAZUH_USER_ID = 1
@@ -3113,14 +3113,14 @@ def check_database_integrity():
     """
 
     def _set_permissions_and_ownership(database: str):
-        """Set Wazuh ownership and permissions.
+        """Set Som ownership and permissions.
 
         Parameters
         ----------
         database : str
             Path to the database which permissions are going to be changed.
         """
-        chown(database, wazuh_uid(), wazuh_gid())
+        chown(database, som_uid(), som_gid())
         os.chmod(database, 0o640)
 
     try:
@@ -3159,7 +3159,7 @@ def check_database_integrity():
                 db_manager.set_database_version(DB_FILE_TMP, expected_version)
                 db_manager.close_sessions()
                 safe_move(DB_FILE_TMP, DB_FILE,
-                          ownership=(wazuh_uid(), wazuh_gid()),
+                          ownership=(som_uid(), som_gid()),
                           permissions=0o640)
                 logger.info(f"{DB_FILE} database upgraded successfully")
 
@@ -3174,7 +3174,7 @@ def check_database_integrity():
             db_manager.close_sessions()
             logger.info(f"{DB_FILE} database created successfully")
     except ValueError as e:
-        logger.error("Error retrieving the current Wazuh RBAC database version. Aborting database integrity check")
+        logger.error("Error retrieving the current Som RBAC database version. Aborting database integrity check")
         db_manager.close_sessions()
         raise e
     except Exception as e:
