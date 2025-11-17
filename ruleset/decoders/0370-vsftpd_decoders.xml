@@ -1,6 +1,5 @@
 <!--
   -  vsftpd decoders
-  -  Author: Daniel Cid.
   -  Updated by Som, Inc.
   -  Copyright (C) 2015, Som Inc.
   -  Copyright (C) 2009 Trend Micro Inc.
@@ -32,9 +31,6 @@
   <order>srcip</order>
 </decoder>
 -->
-<!-- #####################################################
-     Add by Omar MEZRAG - 0xFFFFFF
-     ##################################################### -->
 
 <decoder name="vsftpd">
   <prematch>^\w\w\w \w\w\w\s+\d+ \S+ \d+ [pid \d+] </prematch>
