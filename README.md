@@ -182,4 +182,4 @@ Stay up to date on news, releases, engineering articles and more.
 
 Som Copyright (C) 2014 ETSEC inc. (License GPLv3)
 
-The project started by Anita Patare & Atharva Joshi
+The project started by Atharva Prashant Joshi, Anita Patare and Abhash Mandal
