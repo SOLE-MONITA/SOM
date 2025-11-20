@@ -190,6 +190,6 @@ Stay up to date on news, releases, engineering articles and more.
 
 ## Authors
 
-Som Copyright (C) 2015-2023 Som Inc. (License GPLv2)
+Som Copyright (C) 2014 ETSEC inc. (License GPLv3)
 
-Based on the OSSEC project started by Daniel Cid.
+The project started by Anita Patare & Atharva Joshi
