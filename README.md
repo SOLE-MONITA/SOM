@@ -1,14 +1,4 @@
 # Som
-
-[![Slack](https://img.shields.io/badge/slack-join-blue.svg)](https://som.com/community/join-us-on-slack/)
-[![Email](https://img.shields.io/badge/email-join-blue.svg)](https://groups.google.com/forum/#!forum/som)
-[![Documentation](https://img.shields.io/badge/docs-view-green.svg)](https://documentation.som.com)
-[![Documentation](https://img.shields.io/badge/web-view-green.svg)](https://som.com)
-[![Coverity](https://scan.coverity.com/projects/10992/badge.svg)](https://scan.coverity.com/projects/som-som)
-[![Twitter](https://img.shields.io/twitter/follow/som?style=social)](https://twitter.com/som)
-[![YouTube](https://img.shields.io/youtube/views/peTSzcAueEc?style=social)](https://www.youtube.com/watch?v=peTSzcAueEc)
-
-
 Som is a free and open source platform used for threat prevention, detection, and response. It is capable of protecting workloads across on-premises, virtualized, containerized, and cloud-based environments.
 
 Som solution consists of an endpoint security agent, deployed to the monitored systems, and a management server, which collects and analyzes data gathered by the agents. Besides, Som has been fully integrated with the Elastic Stack, providing a search engine and data visualization tool that allows users to navigate through their security alerts.
